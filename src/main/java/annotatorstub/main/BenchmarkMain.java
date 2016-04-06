@@ -23,7 +23,9 @@ public class BenchmarkMain {
 	public static void main(String[] args) throws Exception {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 		A2WDataset ds = DatasetBuilder.getGerdaqDevel();
+		A2WDataset trainingData = DatasetBuilder.getGerdaqTrainA();
 		FakeAnnotator ann = new FakeAnnotator();
+		ann.setTrainingData(trainingData);
 
 		List<HashSet<Tag>> resTag = BenchmarkCache.doC2WTags(ann, ds);
 		List<HashSet<Annotation>> resAnn = BenchmarkCache.doA2WAnnotations(ann, ds);
