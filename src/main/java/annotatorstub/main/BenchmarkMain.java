@@ -22,8 +22,9 @@ import annotatorstub.utils.Utils;
 public class BenchmarkMain {
 	public static void main(String[] args) throws Exception {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
+
 		A2WDataset ds = DatasetBuilder.getGerdaqTest();
-		FakeAnnotator ann = new FakeAnnotator();
+		FakeAnnotator ann = new FakeAnnotator(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
 
 		List<HashSet<Tag>> resTag = BenchmarkCache.doC2WTags(ann, ds);

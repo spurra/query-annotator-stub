@@ -22,9 +22,14 @@ public class FakeAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
 
-	private static A2WDataset trainingData;
 	private static HashMap<String, List<Integer>> mentionIdMap;
-	
+
+	private WikipediaApiInterface wikiApi;
+
+	public FakeAnnotator (WikipediaApiInterface wikiApi) {
+		this.wikiApi = wikiApi;
+	}
+
 	public long getLastAnnotationTime() {
 		return lastTime;
 	}
@@ -137,11 +142,18 @@ public class FakeAnnotator implements Sa2WSystem {
 	}
 
 	private int checkMention(String mention) {
-		if (FakeAnnotator.mentionIdMap.containsKey(mention)) {
-			return FakeAnnotator.mentionIdMap.get(mention).get(0);
-		}
+//		if (FakeAnnotator.mentionIdMap.containsKey(mention)) {
+//			return FakeAnnotator.mentionIdMap.get(mention).get(0);
+//		}
 
-		return -1;
+		int articleId = -1;
+		try {
+			articleId = this.wikiApi.getIdByTitle(mention);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			return articleId;
+		}
 	}
 	
 	public String getName() {
