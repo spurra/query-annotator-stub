@@ -1,7 +1,10 @@
 package annotatorstub.annotator;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import it.unipi.di.acube.batframework.data.Annotation;
 import it.unipi.di.acube.batframework.data.Mention;
@@ -41,6 +44,16 @@ public class FakeAnnotator implements Sa2WSystem {
 	    return ProblemReduction.Sa2WToSc2W(solveSa2W(text));
     }
 
+	public static String concatenateStrings(String[] words, int left_index, int right_index) {
+		String result = new String();
+
+		for (int i = left_index; i <= right_index; i++) {
+			result += words[i] + " ";
+		}
+
+		return result.substring(0, result.length() - 1);
+	}
+
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
 		lastTime = System.currentTimeMillis();
 
@@ -56,9 +69,9 @@ public class FakeAnnotator implements Sa2WSystem {
 			for (int j = 0; j <= i; j++) {
 				// TODO adjust index for substring
 				int left_index = i;
-				int right_index = n - i + j;
+				int right_index = n - i + j - 1;
 
-				String extract = text.substring(left_index, right_index);
+				String extract = FakeAnnotator.concatenateStrings(words, left_index, right_index);
 				int id = checkMention(extract);
 
 				if (id != -1)
@@ -88,6 +101,42 @@ public class FakeAnnotator implements Sa2WSystem {
 
 	public void setTrainingData(A2WDataset data) {
 		trainingData = data;
+	}
+
+	public static HashMap<String, List<Integer>> convertDatasetToMap () {
+		A2WDataset dataSet = FakeAnnotator.trainingData;
+
+		List<HashSet<Annotation>> annotations =  dataSet.getA2WGoldStandardList();
+		List<String> queries = dataSet.getTextInstanceList();
+
+		int n = annotations.size();
+		HashMap<String, List<Integer>> map = new HashMap<>();
+
+		for (int i = 0; i < n; i++) {
+			String query = queries.get(i);
+			HashSet<Annotation> query_annotations = annotations.get(i);
+
+			for (Annotation a : query_annotations) {
+				int pos = a.getPosition();
+				int len = a.getLength();
+				int wid = a.getConcept();
+
+				// Extract word from query
+				String mention = query.substring(pos, pos + len);
+
+				// Check if mention is already in the map
+				if (!map.containsKey(mention)) {
+					List<Integer> tagList = new ArrayList<>();
+					tagList.add(wid);
+
+					map.put(mention, tagList);
+				} else {
+					map.get(mention).add(wid);
+				}
+			}
+		}
+
+		return map;
 	}
 
 	private int checkMention(String mention) {

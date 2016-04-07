@@ -38,7 +38,7 @@ public class BenchmarkMain {
 		Metrics<Annotation> metricsAnn = new Metrics<>();
 		MetricsResultSet rsA2W = metricsAnn.getResult(resAnn, ds.getA2WGoldStandardList(), new StrongAnnotationMatch(wikiApi));
 		Utils.printMetricsResultSet("A2W-SAM", rsA2W, ann.getName());
-		
+
 		Utils.serializeResult(ann, ds, new File("annotations.bin"));
 		wikiApi.flush();
 	}
