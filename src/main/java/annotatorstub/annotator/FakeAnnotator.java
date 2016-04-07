@@ -23,6 +23,7 @@ public class FakeAnnotator implements Sa2WSystem {
 	private static float threshold = -1f;
 
 	private static A2WDataset trainingData;
+	private static HashMap<String, List<Integer>> mentionIdMap;
 	
 	public long getLastAnnotationTime() {
 		return lastTime;
@@ -51,7 +52,12 @@ public class FakeAnnotator implements Sa2WSystem {
 			result += words[i] + " ";
 		}
 
-		return result.substring(0, result.length() - 1);
+		try {
+			result = result.substring(0, result.length() - 1);
+		} catch (StringIndexOutOfBoundsException e) {
+			System.err.println();
+		}
+		return result;
 	}
 
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
@@ -62,45 +68,31 @@ public class FakeAnnotator implements Sa2WSystem {
 
 		// Iterate through all possible mentions and check if it exists in the training set.
 		// Start with the longest.
-		int start, end;
 		HashSet<ScoredAnnotation> result = new HashSet<>();
 
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j <= i; j++) {
 				// TODO adjust index for substring
-				int left_index = i;
+				int left_index = j;
 				int right_index = n - i + j - 1;
 
 				String extract = FakeAnnotator.concatenateStrings(words, left_index, right_index);
 				int id = checkMention(extract);
 
 				if (id != -1)
-					result.add(new ScoredAnnotation(left_index, length_of_mention, id, 0.1f));
+					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
 
 
 			}
 		}
 
-
-
-
-		
-		int wid;
-        try {
-	        wid = WikipediaApiInterface.api().getIdByTitle(text.substring(start, end));
-        } catch (IOException e) {
-	        throw new AnnotationException(e.getMessage());
-        }
-		
-
-		if (wid != -1)
-			result.add(new ScoredAnnotation(start, end - start, wid, 0.1f));
 		lastTime = System.currentTimeMillis() - lastTime;
 		return result;
     }
 
 	public void setTrainingData(A2WDataset data) {
 		trainingData = data;
+		mentionIdMap = convertDatasetToMap();
 	}
 
 	public static HashMap<String, List<Integer>> convertDatasetToMap () {
@@ -140,8 +132,9 @@ public class FakeAnnotator implements Sa2WSystem {
 	}
 
 	private int checkMention(String mention) {
-		// TODO Check training set for mention. If found, return id of wikipedia article
-
+		if (FakeAnnotator.mentionIdMap.containsKey(mention)) {
+			return FakeAnnotator.mentionIdMap.get(mention).get(0);
+		}
 
 		return -1;
 	}
