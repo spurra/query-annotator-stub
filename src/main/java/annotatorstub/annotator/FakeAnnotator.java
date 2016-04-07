@@ -69,18 +69,23 @@ public class FakeAnnotator implements Sa2WSystem {
 		// Iterate through all possible mentions and check if it exists in the training set.
 		// Start with the longest.
 		HashSet<ScoredAnnotation> result = new HashSet<>();
+		List<Interval> used_intervals = new ArrayList<>();
 
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j <= i; j++) {
-				// TODO adjust index for substring
 				int left_index = j;
 				int right_index = n - i + j - 1;
+
+				if (FakeAnnotator.isForbiddenInterval(used_intervals, left_index, right_index))
+					continue;
 
 				String extract = FakeAnnotator.concatenateStrings(words, left_index, right_index);
 				int id = checkMention(extract);
 
-				if (id != -1)
+				if (id != -1) {
 					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
+					used_intervals.add(new Interval(left_index, right_index));
+				}
 
 
 			}
@@ -90,14 +95,14 @@ public class FakeAnnotator implements Sa2WSystem {
 		return result;
     }
 
-	public void setTrainingData(A2WDataset data) {
-		trainingData = data;
-		mentionIdMap = convertDatasetToMap();
+	public void setTrainingData(A2WDataset... data) {
+		mentionIdMap = new HashMap<>();
+		for (A2WDataset dataset : data) {
+			mentionIdMap.putAll(convertDatasetToMap(dataset));
+		}
 	}
 
-	public static HashMap<String, List<Integer>> convertDatasetToMap () {
-		A2WDataset dataSet = FakeAnnotator.trainingData;
-
+	public static HashMap<String, List<Integer>> convertDatasetToMap (A2WDataset dataSet) {
 		List<HashSet<Annotation>> annotations =  dataSet.getA2WGoldStandardList();
 		List<String> queries = dataSet.getTextInstanceList();
 
@@ -141,5 +146,28 @@ public class FakeAnnotator implements Sa2WSystem {
 	
 	public String getName() {
 		return "Simple yet uneffective query annotator";
+	}
+
+	public static boolean isForbiddenInterval(List<Interval> intervals, int left_index, int right_index) {
+		for (Interval interval : intervals) {
+			if (interval.isWithin(left_index) || interval.isWithin(right_index))
+				return true;
+		}
+
+		return false;
+	}
+
+	public class Interval {
+		public final int l;
+		public final int r;
+
+		public Interval (int l, int r) {
+			this.l = l;
+			this.r = r;
+		}
+
+		public boolean isWithin (int index) {
+			return this.l <= index && index <= this.r;
+		}
 	}
 }
