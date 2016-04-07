@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import annotatorstub.utils.WATRelatednessComputer;
 import it.unipi.di.acube.batframework.data.Annotation;
 import it.unipi.di.acube.batframework.data.Mention;
 import it.unipi.di.acube.batframework.data.ScoredAnnotation;
@@ -21,6 +22,7 @@ import it.unipi.di.acube.batframework.problems.A2WDataset;
 public class FakeAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
+	private static final int MAX_LINKS = 10;
 
 	private static HashMap<String, List<Integer>> mentionIdMap;
 
@@ -148,11 +150,31 @@ public class FakeAnnotator implements Sa2WSystem {
 
 		int articleId = -1;
 		try {
-			articleId = this.wikiApi.getIdByTitle(mention);
+			int max_commonness_id = Integer.MAX_VALUE;
+			double max_commonness = 0.0d;
+
+			int[] links = WATRelatednessComputer.getLinks(mention);
+			int link_count = 0;
+			for (int id : links) {
+				if (link_count >= FakeAnnotator.MAX_LINKS)
+					break;
+
+				String articleTitle = this.wikiApi.getTitlebyId(id);
+				double commonness = WATRelatednessComputer.getCommonness(mention, id);
+				System.err.println(articleTitle);
+
+				if (commonness >= max_commonness && id < max_commonness_id) {
+					max_commonness_id = id;
+					max_commonness = commonness;
+				}
+
+				link_count++;
+			}
+
+			return (links.length != 0) ? max_commonness_id : -1;
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			return articleId;
+			return -1;
 		}
 	}
 	

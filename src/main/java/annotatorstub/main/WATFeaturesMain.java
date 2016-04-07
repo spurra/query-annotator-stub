@@ -13,7 +13,7 @@ public class WATFeaturesMain {
 
 	public static void main(String[] args) throws Exception {
 		WikipediaApiInterface api = WikipediaApiInterface.api();
-		WATRelatednessComputer.setCache("relatedness.cache");;
+		WATRelatednessComputer.setCache("relatedness.cache");
 
 		int obamaId = api.getIdByTitle("Barack Obama");
 		int merkelId = api.getIdByTitle("Angela Merkel");
