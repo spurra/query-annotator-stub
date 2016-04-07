@@ -22,7 +22,7 @@ import it.unipi.di.acube.batframework.problems.A2WDataset;
 public class FakeAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
-	private static final int MAX_LINKS = 10;
+	private static final int MAX_LINKS = 2;
 
 	private static HashMap<String, List<Integer>> mentionIdMap;
 
@@ -147,20 +147,21 @@ public class FakeAnnotator implements Sa2WSystem {
 //		if (FakeAnnotator.mentionIdMap.containsKey(mention)) {
 //			return FakeAnnotator.mentionIdMap.get(mention).get(0);
 //		}
+		String sanitizedMention = mention.replaceAll("[^a-zA-Z0-9 ]", "");
 
 		int articleId = -1;
 		try {
 			int max_commonness_id = Integer.MAX_VALUE;
 			double max_commonness = 0.0d;
 
-			int[] links = WATRelatednessComputer.getLinks(mention);
+			int[] links = WATRelatednessComputer.getLinks(sanitizedMention);
 			int link_count = 0;
 			for (int id : links) {
-				if (link_count >= FakeAnnotator.MAX_LINKS)
+				if (link_count >= FakeAnnotator.MAX_LINKS || max_commonness == 1.0d)
 					break;
 
 				String articleTitle = this.wikiApi.getTitlebyId(id);
-				double commonness = WATRelatednessComputer.getCommonness(mention, id);
+				double commonness = WATRelatednessComputer.getCommonness(sanitizedMention, id);
 				System.err.println(articleTitle);
 
 				if (commonness >= max_commonness && id < max_commonness_id) {
