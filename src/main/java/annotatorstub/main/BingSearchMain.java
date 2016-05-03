@@ -12,7 +12,11 @@ import java.util.List;
 import org.codehaus.jettison.json.JSONObject;
 
 import it.unipi.di.acube.BingInterface;
+import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import annotatorstub.utils.WebResult;
+import annotatorstub.utils.SMAPHFeatures;
+
+
 public class BingSearchMain {
 	public BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
 	public String corrected_query;
@@ -34,13 +38,38 @@ public class BingSearchMain {
 		}
 	}
 	public static void main(String[] args) throws Exception {
-		if (false) {
+
+		if (true) {
 			BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
-			JSONObject a = bing.queryBing("funny kittens wikipedia");
-			
+			JSONObject a = bing.queryBing("funy kittens wikipedia");
+			WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
+
 			// see: http://datamarket.azure.com/dataset/bing/search#schema for
 			// query/response format
-			System.out.println(a.getJSONObject("d").getJSONArray("results").getJSONObject(0).toString(4));
+			JSONObject q = a.getJSONObject("d").getJSONArray("results").getJSONObject(0);
+			System.out.println(q.toString(4));
+			String e = "Cat";
+
+			// Test the private functions.
+			//SMAPHFeatures.testPrivateFunctions();
+
+			// Test all the features
+
+			int wT = SMAPHFeatures.webTotal(q);
+			System.out.println("WebTotal: " + wT);
+			int rank = SMAPHFeatures.rank(q, e);
+			System.out.println("Rank: " + rank);
+			double edTit = SMAPHFeatures.EDTitle(wikiApi, q, e);
+			System.out.println("EDTitle: " + edTit);
+			double edNP = SMAPHFeatures.EDTitNP(wikiApi, q, e);
+			System.out.println("EDTitNP: " + edNP);
+			double minEDB = SMAPHFeatures.minEDBolds(q);
+			System.out.println("minEDBolds: " + minEDB);
+			int captBold = SMAPHFeatures.captBolds(q);
+			System.out.println("CaptBolds: " + captBold);
+			double bTerms = SMAPHFeatures.boldTerms(q);
+			System.out.println("boldTerms: " + bTerms);
+
 		} else {
 			BingSearchMain search = new BingSearchMain("funy kittens wikipedia");
 			System.out.println(search.corrected_query);
