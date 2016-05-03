@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import annotatorstub.main.BingSearchMain;
 import annotatorstub.utils.WATRelatednessComputer;
 import it.unipi.di.acube.batframework.data.Annotation;
 import it.unipi.di.acube.batframework.data.Mention;
@@ -66,13 +67,33 @@ public class FakeAnnotator implements Sa2WSystem {
 		}
 		return result;
 	}
-
+	
+	public static void main() {
+		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
+		FakeAnnotator ann = new FakeAnnotator(wikiApi);
+		ann.solveSa2W("error in mathematics calculas");
+		
+	}
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
 		lastTime = System.currentTimeMillis();
-
+		BingSearchMain bing;
+		String text_clean = null;
 		String[] words = text.split(" ");
+		String[] correct_words = new  String[words.length];
+		/* 
+		 * Fix spelling mistakes using the BING search API
+		 */				
+		for (Integer idx=0;idx<words.length;idx++) {
+			try {
+				bing = new BingSearchMain(words[idx]);
+				correct_words[idx]=bing.corrected_query;
+			} catch (Exception e) {
+				correct_words[idx]=words[idx];
+			}		
+		}
 		int n = words.length;
-
+		System.err.println("Find entities for query " + text);
+		
 		// Iterate through all possible mentions and check if it exists in the training set.
 		// Start with the longest.
 		HashSet<ScoredAnnotation> result = new HashSet<>();
@@ -86,9 +107,11 @@ public class FakeAnnotator implements Sa2WSystem {
 				if (FakeAnnotator.isForbiddenInterval(used_intervals, left_index, right_index))
 					continue;
 
+				
 				String extract = FakeAnnotator.concatenateStrings(words, left_index, right_index);
-				int id = checkMention(extract);
-
+				String clean_extract = FakeAnnotator.concatenateStrings(correct_words, left_index, right_index);
+				int id = checkMention(clean_extract);
+				
 				if (id != -1) {
 					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
 					used_intervals.add(new Interval(left_index, right_index));
@@ -147,7 +170,7 @@ public class FakeAnnotator implements Sa2WSystem {
 //		if (FakeAnnotator.mentionIdMap.containsKey(mention)) {
 //			return FakeAnnotator.mentionIdMap.get(mention).get(0);
 //		}
-		String sanitizedMention = mention.replaceAll("[^a-zA-Z0-9 ]", "");
+		String sanitizedMention = mention.replaceAll("[^a-zA-Z0-9' ]", "");
 
 		int articleId = -1;
 		try {
