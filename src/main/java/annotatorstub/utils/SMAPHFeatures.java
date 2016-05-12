@@ -9,6 +9,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -140,6 +141,93 @@ public class SMAPHFeatures {
     }
 
     /*
+    ***************************
+    *                         *
+    *  Annotiation features   *
+    *                         *
+    ***************************
+    */
+
+    public static double anchorsAvgED(String e, String m) {
+        double avgED = 0.0;
+        double sum1 = 0.0;
+        double sum2 = 0.0;
+
+
+        List<String> G = anchorSetG(e);
+        for (String g : G) {
+            double f = Math.sqrt(freq(e,g));
+            sum1 += f;
+            sum2 += f * editDistance(e, m);
+        }
+
+        avgED = sum2 / sum1;
+
+        return avgED;
+    }
+
+    public static double minEdTitle(WikipediaApiInterface wikiApi, String e, String m) {
+        double minEDTit = 0.0;
+
+        int ID;
+        try {
+            ID = wikiApi.getIdByTitle(e);
+            if (ID != -1) {
+                String wikiTitle = wikiApi.getTitlebyId(ID);
+                minEDTit = minED(wikiTitle, e);
+            }
+        }
+
+        catch (IOException e1) {
+            e1.printStackTrace();
+        }
+
+        return minEDTit;
+    }
+
+    public static double EdTitle(WikipediaApiInterface wikiApi, String e, String m) {
+        double edTit = 0.0;
+
+        int ID;
+        try {
+            ID = wikiApi.getIdByTitle(e);
+            if (ID != -1) {
+                String wikiTitle = wikiApi.getTitlebyId(ID);
+                edTit = editDistance(wikiTitle, e);
+            }
+        }
+
+        catch (IOException e1) {
+            e1.printStackTrace();
+        }
+
+        return edTit;
+    }
+
+    public static double commonness(WikipediaApiInterface wikiApi, String e, String m) {
+        double comm = 0.0;
+
+        int ID = 0;
+        try {
+            ID = wikiApi.getIdByTitle(e);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+
+        WATRelatednessComputer.getCommonness(m, ID);
+
+        return comm;
+    }
+
+    public static double lp(String m) {
+        double lp = 0.0;
+
+        WATRelatednessComputer.getLp(m);
+
+        return lp;
+    }
+
+    /*
     ************************
     *                      *
     *  Helper functions    *
@@ -147,6 +235,20 @@ public class SMAPHFeatures {
     ************************
     */
 
+
+    // Returns a list of anchors used in Wikipedia to link e
+    private static List<String> anchorSetG(String e) {
+        ArrayList<String> setG = new ArrayList<>();
+
+        return setG;
+    }
+
+    private static int freq(String e, String a) {
+        int freq = 0;
+
+
+        return freq;
+    }
 
     // Returns a list of words which are bold in the query.
     private static List<String> getBoldWords(JSONObject q) {
