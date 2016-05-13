@@ -16,10 +16,29 @@ public class CandidateGenerator {
 	}
 	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
 	
+	
 	public static Map<String,List<Double>> get_entity_candidates(String query) throws Exception {
 		/**
 		 *  Compute (entity,features) pairs given a string
 		 */
+		Map<String,List<Double>> entity_features = get_entites_and_features(query);
+		Map<String,List<Double>> entity_features_wiki = get_entites_and_features(query+ " wikipedia");
+		for (String key : entity_features_wiki.keySet()) {
+			entity_features.put(key, entity_features_wiki.get(key));
+		}
+		if (true) {
+			for (String key : entity_features.keySet()) {
+				System.out.print(key+ ": ");
+				for (Double score : entity_features.get(key)) {
+					System.out.print(score + " ");
+				}
+				System.out.println();				
+			}
+		}
+		
+		return entity_features;
+	}
+	public static Map<String,List<Double>> get_entites_and_features(String query) throws Exception {
 		Map<String,List<Double>> entity_features = new HashMap<String,List<Double>>(); 
 		JSONObject data = BingSearchMain.getQueryResults(query);
 
@@ -54,18 +73,6 @@ public class CandidateGenerator {
 				
 			}
 		}
-		
-		if (true) {
-			for (String key : entity_features.keySet()) {
-				System.out.print(key+ ": ");
-				for (Double score : entity_features.get(key)) {
-					System.out.print(score + " ");
-				}
-				System.out.println();				
-			}
-		}
-
-
 		return entity_features;	
 	}
 
