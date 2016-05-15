@@ -23,7 +23,7 @@ import it.unipi.di.acube.batframework.problems.A2WDataset;
 public class FakeAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
-	private static final int MAX_LINKS = 2;
+	private static final int MAX_LINKS = 5;
 
 	private static HashMap<String, List<Integer>> mentionIdMap;
 
