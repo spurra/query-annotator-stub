@@ -15,6 +15,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.*;
+
+import org.jsoup.nodes.*;
+import org.jsoup.select.Elements;
 
 
 /* Each static function in this class expects the first element of the results array of a bing query as input. E.g:
@@ -27,6 +31,7 @@ import java.util.regex.Pattern;
 public class SMAPHFeatures {
 
 
+    private static int searchCount = 100;
     /*
     ************************
     *                      *
@@ -46,7 +51,6 @@ public class SMAPHFeatures {
     }
 
     public static boolean isNE(JSONObject q) {
-        //TODO
         notImplemented();
         return false;
     }
@@ -102,10 +106,20 @@ public class SMAPHFeatures {
 
 
     public static double minEDBolds(JSONObject q) {
-        List<String> boldWords = getBoldWords(q);
+        List<ArrayList<String>> boldWords = getBoldWords(q);
         double minEDBolds = Integer.MAX_VALUE;
         String query = getQuery(q, true);
-        for (String bw : boldWords) {
+
+        List<String> boldSentences = new ArrayList<>();
+        for (ArrayList<String> list : boldWords) {
+            String curr = "";
+            for (String w : list) {
+                curr += w + " ";
+            }
+            boldSentences.add(curr);
+        }
+
+        for (String bw : boldSentences) {
             double curr = minED(bw, query);
             if (minEDBolds > curr)
                 minEDBolds = curr;
@@ -116,24 +130,26 @@ public class SMAPHFeatures {
 
     // Returns the number of capitalised strings in B(q)
     public static int captBolds(JSONObject q) {
-        List<String> boldWords = getBoldWords(q);
+        List<ArrayList<String>> boldWords = getBoldWords(q);
         int nrCapitalised = 0;
 
-        for (String bw : boldWords) {
-            if (Character.isUpperCase(bw.charAt(0)))
-                nrCapitalised++;
+        for (ArrayList<String> list : boldWords) {
+            for (String bw : list) {
+                if (Character.isUpperCase(bw.charAt(0)))
+                    nrCapitalised++;
+            }
         }
 
         return nrCapitalised;
     }
 
-    // Returns the average length of the bold terms
+    // Returns the average number of bold terms
     public static double boldTerms(JSONObject q) {
-        List<String> boldWords = getBoldWords(q);
+        List<ArrayList<String>> boldWords = getBoldWords(q);
 
         double avgLength = 0.0;
-        for (String bw : boldWords) {
-            avgLength += bw.length();
+        for (ArrayList<String> bw : boldWords) {
+            avgLength += bw.size();
         }
         avgLength /= boldWords.size();
 
@@ -148,13 +164,16 @@ public class SMAPHFeatures {
     ***************************
     */
 
-    public static double anchorsAvgED(String e, String m) {
-        double avgED = 0.0;
+    // Cannot be used at the moment
+    public static double anchorsAvgED(WikipediaApiInterface wikiApi, String e, String m) {
+
+        notImplemented();
+/*        double avgED;
         double sum1 = 0.0;
         double sum2 = 0.0;
 
 
-        List<String> G = anchorSetG(e);
+        List<String> G = anchorSetG(wikiApi, e);
         for (String g : G) {
             double f = Math.sqrt(freq(e,g));
             sum1 += f;
@@ -163,7 +182,8 @@ public class SMAPHFeatures {
 
         avgED = sum2 / sum1;
 
-        return avgED;
+        return avgED;*/
+        return 0;
     }
 
     public static double minEdTitle(WikipediaApiInterface wikiApi, String e, String m) {
@@ -174,7 +194,7 @@ public class SMAPHFeatures {
             ID = wikiApi.getIdByTitle(e);
             if (ID != -1) {
                 String wikiTitle = wikiApi.getTitlebyId(ID);
-                minEDTit = minED(wikiTitle, e);
+                minEDTit = minED(wikiTitle, m);
             }
         }
 
@@ -193,7 +213,7 @@ public class SMAPHFeatures {
             ID = wikiApi.getIdByTitle(e);
             if (ID != -1) {
                 String wikiTitle = wikiApi.getTitlebyId(ID);
-                edTit = editDistance(wikiTitle, e);
+                edTit = editDistance(wikiTitle, m);
             }
         }
 
@@ -237,28 +257,43 @@ public class SMAPHFeatures {
 
 
     // Returns a list of anchors used in Wikipedia to link e
-    private static List<String> anchorSetG(String e) {
-        ArrayList<String> setG = new ArrayList<>();
+    // Assuming e is a valid wikipedia title.
+    private static List<String> anchorSetG(WikipediaApiInterface wikiApi, String e) {
+        List<String> setG = new ArrayList<>();
 
+        int[] linkIDs = WATRelatednessComputer.getLinks(e);
+        for (int i = 0;i < linkIDs.length;i++) {
+            try {
+                String currTitle = wikiApi.getTitlebyId(linkIDs[i]);
+                setG.add(currTitle);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        }
         return setG;
     }
 
+    // Returns the number of times that entity e has been linked in Wiki by anchor a
+    // Assuming e is a valid wikipedia title.
     private static int freq(String e, String a) {
         int freq = 0;
+
+
 
 
         return freq;
     }
 
     // Returns a list of words which are bold in the query.
-    private static List<String> getBoldWords(JSONObject q) {
+    private static List<ArrayList<String>> getBoldWords(JSONObject q) {
         JSONArray searchResults;
-        ArrayList<String> boldWords = new ArrayList<String>();
+        ArrayList<ArrayList<String>> boldWords = new ArrayList<ArrayList<String>>();
 
         try {
             searchResults = q.getJSONArray("Web");
             // Go through all search results to get the rank of the entity e
             for (int i = 0; i < searchResults.length(); i++) {
+                boldWords.add(new ArrayList<String>());
                 String currTitle = searchResults.getJSONObject(i).getString("Description");
 
                 Matcher m = Pattern.compile("\uE000\\w+\uE001").matcher(currTitle);
@@ -266,7 +301,7 @@ public class SMAPHFeatures {
                     String currBold = m.group();
                     // Remove the bold indicators
                     currBold = currBold.substring(1, currBold.length() - 1);
-                    boldWords.add(currBold);
+                    boldWords.get(i).add(currBold);
                 }
             }
         } catch (JSONException e1) {
@@ -344,21 +379,30 @@ public class SMAPHFeatures {
 
     // Returns the rank of the wikipedia url in the search result
     private static int getWikiRank(JSONObject q, String e) {
+        String qs = getQuery(q, true);
+        String url = "http://www.bing.com/search?q=" + qs.replace(" ", "+") + "&count=" + searchCount;
         int rank = Integer.MAX_VALUE;
+
         try {
-            JSONArray searchResults = q.getJSONArray("Web");
-            // Go through all search results to get the rank of the entity e
-            for (int i = 0; i < searchResults.length(); i++) {
-                String currTitle = searchResults.getJSONObject(i).getString("Title");
-                // Check if e's wikipedia page is the current search result
+            Document doc = Jsoup.connect(url).get();
+            Elements searchResults = doc.getElementById("b_results").getElementsByClass("b_algo");
+            int i = 0;
+            for (Element res : searchResults) {
+                String currTitle = res.getElementsByTag("a").first().text();
                 if (currTitle.matches("^\uE000?" + e + "\uE001? - \uE000?Wikipedia\uE001?.*")) {
                     rank = i;
                     break;
                 }
+                i++;
             }
-        } catch (JSONException e1) {
+
+
+
+        } catch (IOException e1) {
             e1.printStackTrace();
         }
+
+
 
         return rank;
     }
