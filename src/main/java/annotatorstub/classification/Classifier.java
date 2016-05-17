@@ -1,5 +1,20 @@
 package annotatorstub.classification;
 
+import annotatorstub.annotator.CandidateGenerator;
+import annotatorstub.annotator.FakeAnnotator;
+import annotatorstub.utils.Utils;
+import it.unipi.di.acube.batframework.cache.BenchmarkCache;
+import it.unipi.di.acube.batframework.cache.BenchmarkResults;
+import it.unipi.di.acube.batframework.data.Tag;
+import it.unipi.di.acube.batframework.datasetPlugins.DatasetBuilder;
+import it.unipi.di.acube.batframework.metrics.Metrics;
+import it.unipi.di.acube.batframework.metrics.MetricsResultSet;
+import it.unipi.di.acube.batframework.metrics.StrongTagMatch;
+import it.unipi.di.acube.batframework.problems.A2WDataset;
+import it.unipi.di.acube.batframework.problems.C2WDataset;
+import it.unipi.di.acube.batframework.problems.C2WSystem;
+import it.unipi.di.acube.batframework.utils.AnnotationException;
+import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import libsvm.*;
 import java.io.*;
 import java.util.*;
@@ -10,14 +25,61 @@ public class Classifier {
     private svm_model model;
     private String input_file_name;		// set by parse_command_line
     private String model_file_name;		// set by parse_command_line
+    private String model_string;
     private String error_msg;
     private int cross_validation;
     private int nr_fold;
+    private static HashMap<String, List<Integer>> mentionIdMap;
+    private static BenchmarkResults resultsCache = new BenchmarkResults();
 
     private static svm_print_interface svm_print_null = new svm_print_interface()
     {
         public void print(String s) {}
     };
+
+    private static svm_print_interface svm_print_stdout = new svm_print_interface()
+    {
+        public void print(String s)
+        {
+            System.out.print(s);
+        }
+    };
+
+    private static svm_print_interface svm_print_string = svm_print_stdout;
+
+    static void info(String s)
+    {
+        svm_print_string.print(s);
+    }
+
+
+
+    public Classifier() {
+        model_string = "";
+    }
+
+
+    public void addPositiveExample(String ex) {
+        model_string += "+1 " + ex;
+        System.out.println("+1 " + ex);
+    }
+
+    public void addNegativeExample(String ex) {
+        model_string += "-1 " + ex;
+        System.out.println("-1 " + ex);
+    }
+
+
+    public static void main(String argv[]) throws Exception
+    {
+        Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates("Funny cats wikipedia");
+        ModelConverter serializer = new ModelConverter(entity_features);
+        //String svm_model = serializer.serializeToString(entity_features);
+        Classifier t = new Classifier();
+        //t.model_string = svm_model;
+        t.run(argv);
+
+    }
 
     private static void exit_with_help()
     {
@@ -91,7 +153,7 @@ public class Classifier {
         }
     }
 
-    private void run(String argv[]) throws IOException
+    public void run(String argv[]) throws IOException
     {
         parse_command_line(argv);
         read_problem();
@@ -110,15 +172,111 @@ public class Classifier {
         else
         {
             model = svm.svm_train(prob,param);
-            svm.svm_save_model(model_file_name,model);
+//            svm.svm_save_model(model_file_name,model);
         }
     }
 
-    public static void main(String argv[]) throws IOException
+    public double predict(BufferedReader input, /*DataOutputStream output, */int predict_probability) throws IOException
     {
-        Classifier t = new Classifier();
-        t.run(argv);
+        String res = "";
+        int correct = 0;
+        int total = 0;
+        double error = 0;
+        double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
+
+        int svm_type=svm.svm_get_svm_type(model);
+        int nr_class=svm.svm_get_nr_class(model);
+        double[] prob_estimates=null;
+
+        if(predict_probability == 1)
+        {
+            if(svm_type == svm_parameter.EPSILON_SVR ||
+                    svm_type == svm_parameter.NU_SVR)
+            {
+                Classifier.info("Prob. model for test data: target value = predicted value + z,\nz: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma="+svm.svm_get_svr_probability(model)+"\n");
+            }
+            else
+            {
+                int[] labels=new int[nr_class];
+                svm.svm_get_labels(model,labels);
+                prob_estimates = new double[nr_class];
+                //output.writeBytes("labels");
+                res += "labels";
+                for(int j=0;j<nr_class;j++) {
+                    //output.writeBytes(" " + labels[j]);
+                    res += " " + labels[j];
+                }
+                //output.writeBytes("\n");
+                res += "\n";
+            }
+        }
+        double v = 0;
+        while(true)
+        {
+            String line = input.readLine();
+            if(line == null) break;
+
+            StringTokenizer st = new StringTokenizer(line," \t\n\r\f:");
+
+            double target = atof(st.nextToken());
+            int m = st.countTokens()/2;
+            svm_node[] x = new svm_node[m];
+            for(int j=0;j<m;j++)
+            {
+                x[j] = new svm_node();
+                x[j].index = atoi(st.nextToken());
+                x[j].value = atof(st.nextToken());
+            }
+
+
+            if (predict_probability==1 && (svm_type==svm_parameter.C_SVC || svm_type==svm_parameter.NU_SVC))
+            {
+                v = svm.svm_predict_probability(model,x,prob_estimates);
+                //output.writeBytes(v+" ");
+                res += v+" ";
+                for(int j=0;j<nr_class;j++) {
+                    //output.writeBytes(prob_estimates[j] + " ");
+                    res += prob_estimates[j] + " ";
+                }
+                //output.writeBytes("\n");
+                res += "\n";
+            }
+            else
+            {
+                v = svm.svm_predict(model,x);
+                //output.writeBytes(v+"\n");
+                res += v+"\n";
+            }
+
+            if(v == target)
+                ++correct;
+            error += (v-target)*(v-target);
+            sumv += v;
+            sumy += target;
+            sumvv += v*v;
+            sumyy += target*target;
+            sumvy += v*target;
+            ++total;
+        }
+        /*
+        if(svm_type == svm_parameter.EPSILON_SVR ||
+                svm_type == svm_parameter.NU_SVR)
+        {
+            Classifier.info("Mean squared error = "+error/total+" (regression)\n");
+            Classifier.info("Squared correlation coefficient = "+
+                    ((total*sumvy-sumv*sumy)*(total*sumvy-sumv*sumy))/
+                            ((total*sumvv-sumv*sumv)*(total*sumyy-sumy*sumy))+
+                    " (regression)\n");
+        }
+        else
+            Classifier.info("Accuracy = "+(double)correct/total*100+
+                    "% ("+correct+"/"+total+") (classification)\n");
+        */
+
+        return v;
     }
+
+
 
     private static double atof(String s)
     {
@@ -164,8 +322,8 @@ public class Classifier {
         for(i=0;i<argv.length;i++)
         {
             if(argv[i].charAt(0) != '-') break;
-            if(++i>=argv.length)
-                exit_with_help();
+            //if(++i>=argv.length)
+            //    exit_with_help();
             switch(argv[i-1].charAt(1))
             {
                 case 's':
@@ -236,14 +394,14 @@ public class Classifier {
                 break;
                 default:
                     System.err.print("Unknown option: " + argv[i-1] + "\n");
-                    exit_with_help();
+                    //exit_with_help();
             }
         }
 
         svm.svm_set_print_string_function(print_func);
 
         // determine filenames
-
+/*
         if(i>=argv.length)
             exit_with_help();
 
@@ -257,13 +415,18 @@ public class Classifier {
             ++p;	// whew...
             model_file_name = argv[i].substring(p)+".model";
         }
+        */
     }
 
     // read in a problem (in svmlight format)
 
     private void read_problem() throws IOException
     {
-        BufferedReader fp = new BufferedReader(new FileReader(input_file_name));
+        BufferedReader fp;
+        if (!this.model_string.isEmpty())
+            fp = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(this.model_string.getBytes())));
+        else
+            fp = new BufferedReader(new FileReader(input_file_name));
         Vector<Double> vy = new Vector<Double>();
         Vector<svm_node[]> vx = new Vector<svm_node[]>();
         int max_index = 0;
@@ -281,7 +444,8 @@ public class Classifier {
             for(int j=0;j<m;j++)
             {
                 x[j] = new svm_node();
-                x[j].index = atoi(st.nextToken());
+                String temp = st.nextToken();
+                x[j].index = atoi(temp);
                 x[j].value = atof(st.nextToken());
             }
             if(m>0) max_index = Math.max(max_index, x[m-1].index);
@@ -317,4 +481,5 @@ public class Classifier {
 
         fp.close();
     }
+
 }

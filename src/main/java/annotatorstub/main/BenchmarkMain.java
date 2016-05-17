@@ -1,5 +1,6 @@
 package annotatorstub.main;
 
+import annotatorstub.annotator.SVMAnnotator;
 import it.unipi.di.acube.batframework.cache.BenchmarkCache;
 import it.unipi.di.acube.batframework.data.Annotation;
 import it.unipi.di.acube.batframework.data.Tag;
@@ -24,7 +25,8 @@ public class BenchmarkMain {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 
 		A2WDataset ds = DatasetBuilder.getGerdaqTest();
-		FakeAnnotator ann = new FakeAnnotator(wikiApi);
+		//FakeAnnotator ann = new FakeAnnotator(wikiApi);
+		SVMAnnotator ann = new SVMAnnotator(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
 
 		List<HashSet<Tag>> resTag = BenchmarkCache.doC2WTags(ann, ds);
