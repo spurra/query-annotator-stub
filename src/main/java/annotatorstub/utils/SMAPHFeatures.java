@@ -502,6 +502,9 @@ public class SMAPHFeatures {
         System.out.println();
 
     }
+    public static void main(String[] args) {
+    	testPrivateFunctions();
+    }
 
 }
 

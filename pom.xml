@@ -31,6 +31,18 @@
     	<artifactId>bing-api-java</artifactId>
     	<version>0.3</version>
     </dependency>
+      <!-- http://mvnrepository.com/artifact/org.json/json -->
+      <dependency>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
+          <version>20160212</version>
+      </dependency>
+      <!-- http://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+      <dependency>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+          <version>4.5.2</version>
+      </dependency>
   </dependencies>
           <build>
                 <plugins>
