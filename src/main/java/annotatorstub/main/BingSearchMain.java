@@ -22,7 +22,7 @@ import annotatorstub.utils.SMAPHFeatures;
 
 
 public class BingSearchMain {
-	public static BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
+	public static BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");
 	// TODO add related search suggestions?
 	public static JSONObject getQueryResults(String query) throws Exception {
 		//String corrected_query;
