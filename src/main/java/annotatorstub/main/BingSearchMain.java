@@ -6,11 +6,15 @@
  */
 package annotatorstub.main;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.jettison.json.JSONObject;
-
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import it.unipi.di.acube.BingInterface;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import annotatorstub.utils.WebResult;
@@ -22,8 +26,20 @@ public class BingSearchMain {
 	// TODO add related search suggestions?
 	public static JSONObject getQueryResults(String query) throws Exception {
 		//String corrected_query;
-		//List<WebResult> results = new ArrayList<WebResult>();		
-		JSONObject a = bing.queryBing(query);
+		//List<WebResult> results = new ArrayList<WebResult>();
+		String entity_file="data/" + query + ".txt";
+		File f = new File(entity_file);
+		JSONObject a;
+		if (f.exists()) {
+			System.out.println("Read data from "  + entity_file);
+			String content = new String(Files.readAllBytes(Paths.get(entity_file)));
+			a = new JSONObject(content);
+		} else {	
+			a = bing.queryBing(query);
+			FileWriter fr = new FileWriter(f);
+			fr.write(a.toString());
+			fr.close();
+		}
 		JSONObject data = a.getJSONObject("d").getJSONArray("results").getJSONObject(0);
 		return data;
 		/*
@@ -40,14 +56,16 @@ public class BingSearchMain {
 	}
 	public static void main(String[] args) throws Exception {
 
-		BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
-		JSONObject a = bing.queryBing("funy kittens wikipedia");
-		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
-
+		/*BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
+		JSONObject a = bing.queryBing();
+		
+		*/
+		//System.out.println(BingSearchMain.getQueryResults("funny kittens"));
 		// see: http://datamarket.azure.com/dataset/bing/search#schema for
 		// query/response format
-		JSONObject q = a.getJSONObject("d").getJSONArray("results").getJSONObject(0);
-		System.out.println(q.toString(4));
+		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
+		JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
+		//System.out.println(q.toString(4));
 		String e = "Cat";
 
 		// Test the private functions.
@@ -69,6 +87,5 @@ public class BingSearchMain {
 		System.out.println("CaptBolds: " + captBold);
 		double bTerms = SMAPHFeatures.boldTerms(q);
 		System.out.println("boldTerms: " + bTerms);
-
 	}
 }
