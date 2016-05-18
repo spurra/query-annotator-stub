@@ -35,10 +35,15 @@ public class BingSearchMain {
 			String content = new String(Files.readAllBytes(Paths.get(entity_file)));
 			a = new JSONObject(content);
 		} else {	
+			
 			a = bing.queryBing(query);
-			FileWriter fr = new FileWriter(f);
-			fr.write(a.toString());
-			fr.close();
+			try {
+				FileWriter fr = new FileWriter(f);
+				fr.write(a.toString());
+				fr.close();
+			} catch (Exception e) {
+				
+			}
 		}
 		JSONObject data = a.getJSONObject("d").getJSONArray("results").getJSONObject(0);
 		return data;

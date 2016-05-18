@@ -90,8 +90,8 @@ public class SVMAnnotator implements Sa2WSystem {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			nr++;
-			if (nr > MAX_LINKS) break;
+			//nr++;
+			//if (nr > MAX_LINKS) break;
 		}
 
 		try {
