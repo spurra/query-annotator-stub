@@ -85,8 +85,8 @@ public class FakeAnnotator implements Sa2WSystem {
 		 */				
 		for (Integer idx=0;idx<words.length;idx++) {
 			try {
-				bing = new BingSearchMain(words[idx]);
-				correct_words[idx]=bing.corrected_query;
+//				bing = new BingSearchMain(words[idx]);
+//				correct_words[idx]=bing.corrected_query;
 			} catch (Exception e) {
 				correct_words[idx]=words[idx];
 			}		
