@@ -16,7 +16,7 @@ import java.util.*;
 public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
-	private static final int MAX_LINKS = 5;
+	private static final int MAX_LINKS = 50;
 
 	private static HashMap<String, List<Integer>> queryIdMap;
 

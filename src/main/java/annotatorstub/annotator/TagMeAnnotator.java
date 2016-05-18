@@ -24,7 +24,7 @@ public class TagMeAnnotator {
     private static final String TAGME_URL = "http://tagme.di.unipi.it/tag";
 
     // The key provided by the TagMe team
-    private static final String TAGME_KEY = "";
+    private static final String TAGME_KEY = "eth2016a334GqA";
 
     // Singleton
     private static TagMeAnnotator instance = null;
@@ -40,8 +40,15 @@ public class TagMeAnnotator {
         return instance;
     }
 
-    // Return a list of all entities that a snippet contains (according to TagMe)
+    // Retrieve all entities (unfiltered)
     public List<Entity> getEntities(String snippet) {
+        return this.getFilteredEntities(snippet, 0.0d);
+    }
+
+    // Return a list of all entities that a snippet contains (according to TagMe)
+    public List<Entity> getFilteredEntities(String snippet, double rho) {
+        if (snippet.isEmpty())
+            return new ArrayList<>();
 
         // Initialization
         CloseableHttpClient client = HttpClients.createDefault();
@@ -51,6 +58,9 @@ public class TagMeAnnotator {
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("text", snippet));
         params.add(new BasicNameValuePair("key", TagMeAnnotator.TAGME_KEY));
+        params.add(new BasicNameValuePair("include_abstract", "true"));
+
+        // TODO: Demand abstract
 
         try {
             // Encode
@@ -72,13 +82,25 @@ public class TagMeAnnotator {
             // Close client
             client.close();
 
-            return extractEntitiesFromJSON(o);
+            // Extract entities
+            List<Entity> entities = extractEntitiesFromJSON(o);
+
+            // Filter entities (drop out entities that are too weak)
+            List<Entity> filtered_entities = new ArrayList<>();
+            for (Entity entity : entities) {
+                if (entity.getRho() >= rho)
+                    filtered_entities.add(entity);
+            }
+
+            return filtered_entities;
 
         } catch (UnsupportedEncodingException e) {
             System.err.println("Error while encoding POST request");
         } catch (IOException e) {
             System.err.println("Error while transmitting POST request");
         }
+
+        return null;
     }
 
     // Extract the entities from the TagMe's server response
@@ -99,31 +121,39 @@ public class TagMeAnnotator {
     public class Entity {
 
         // Id of Wikipedia article
-        private String wiki_id;
-        // Title of wikipedia article
+        private int wiki_id;
+        // Mention that has been spotted (e.g. Obama for entity Barack Obama)
+        private String mention;
+        // Title of wikipedia article (eg. en.wikipedia.org/Barack_Obama)
         private String wiki_title;
         // Abstract of wikipedia article
         private String wiki_abstract;
         // Rho ("Quality measure")
         private double rho;
 
-        public Entity(String wiki_id, String wiki_title, String wiki_abstract) {
+        public Entity(int wiki_id, String mention, String wiki_title, String wiki_abstract) {
             this.wiki_id = wiki_id;
+            this.mention = mention;
             this.wiki_title = wiki_title;
             this.wiki_abstract = wiki_abstract;
         }
 
         // Routine to convert JSON (as fetched from TagMe) to Entity object
         public Entity(JSONObject json_obj) {
-            this.wiki_id = json_obj.getString("id");
+            this.wiki_id = json_obj.getInt("id");
+            this.mention = json_obj.getString("spot");
             this.wiki_title = json_obj.getString("title");
             this.wiki_abstract = json_obj.getString("abstract");
 
             this.rho = json_obj.getDouble("rho");
         }
 
-        public String getWikiId() {
+        public int getWikiId() {
             return this.wiki_id;
+        }
+
+        public String getMention() {
+            return this.mention;
         }
 
         public String getWikiTitle() {
