@@ -464,29 +464,48 @@ public class SMAPHFeatures {
         return descs;
     }
 
-    private static List<EntityMentionPair> getSetA(JSONObject q) {
+    private static List<EntityMentionPair> getSetA(String s) {
         List<EntityMentionPair> setA = new ArrayList<EntityMentionPair>();
         TagMeAnnotator tag_me = TagMeAnnotator.getInstance();
-        List<String> descs = getDescriptions(q);
-        List<ArrayList<String>> boldWords = getBoldWords(q);
+        List<String> boldWords = new ArrayList<>();
 
 
-
-        for (int i = 0;i<descs.size(); i++) {
-            String desc = descs.get(i);
-            ArrayList<String> currBW = boldWords.get(i);
-            List<EntityMentionPair> entities = tag_me.getFilteredEntities(desc, rho);
-
-            for (String bw : currBW)
-                for (EntityMentionPair emp : entities) {
-                    String currM = emp.getMention();
-                    if (isOverlap(bw, currM))
-                        setA.add(emp);
-                }
+        // Find all the bold words in the description
+        Matcher m = Pattern.compile("\uE000\\w+\uE001").matcher(s);
+        while (m.find()) {
+            String currBold = m.group();
+            // Remove the bold indicators
+            currBold = currBold.substring(1, currBold.length() - 1);
+            boldWords.add(currBold);
         }
 
 
+        // Get all mention-entity pairs from the TAGME annotator
+        List<EntityMentionPair> entities = tag_me.getFilteredEntities(s, rho);
+
+        // Check if any mentions overlap with the boldwords
+        for (String bw : boldWords)
+            for (EntityMentionPair emp : entities) {
+                String currM = emp.getMention();
+                if (isOverlap(bw, currM))
+                    setA.add(emp);
+            }
+
         return setA;
+    }
+
+    private static List<Pair<String, String>> getSetX(JSONObject q) {
+        List<Pair<String, String>> setX = new ArrayList<Pair<String, String>>();
+        List<String> descs = getDescriptions(q);
+
+        for (String s : descs) {
+            List<EntityMentionPair> A = getSetA(s);
+            for (EntityMentionPair e : A)
+                setX.add(new Pair<String, String>(e.getMention(), s));
+
+        }
+
+        return setX;
     }
 
     private static void notImplemented() {
