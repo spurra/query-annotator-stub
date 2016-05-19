@@ -3,14 +3,19 @@ package annotatorstub.utils;
  * Created by Adrian on 29/04/16.
  */
 
+import annotatorstub.annotator.TagMeAnnotator;
+import it.unipi.di.acube.batframework.utils.Pair;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import it.unipi.di.acube.BingInterface;
+import org.bytedeco.javacpp.presets.opencv_core;
+import org.bytedeco.javacv.CanvasFrame;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,12 +37,13 @@ public class SMAPHFeatures {
 
 
     private static int searchCount = 100;
+    private static double rho = 0.2f;
     /*
-    ************************
-    *                      *
-    *  E1 and E2 features  *
-    *                      *
-    ************************
+    *******************************
+    *                             *
+    *  Candidate entity features  *
+    *                             *
+    *******************************
     */
 
     public static int webTotal(JSONObject q) {
@@ -157,33 +163,34 @@ public class SMAPHFeatures {
     }
 
     /*
-    ***************************
-    *                         *
-    *  Annotiation features   *
-    *                         *
-    ***************************
+    *****************************************
+    *                                       *
+    *    Candidate annotation features      *
+    *                                       *
+    *****************************************
     */
 
-    // Cannot be used at the moment
+    // Returns some important feature
     public static double anchorsAvgED(WikipediaApiInterface wikiApi, String e, String m) {
 
-        notImplemented();
-/*        double avgED;
+        double avgED;
         double sum1 = 0.0;
         double sum2 = 0.0;
 
-
-        List<String> G = anchorSetG(wikiApi, e);
-        for (String g : G) {
-            double f = Math.sqrt(freq(e,g));
-            sum1 += f;
-            sum2 += f * editDistance(e, m);
+        try {
+            List<String> G = anchorSetG(wikiApi, e);
+            for (String g : G) {
+                double f = Math.sqrt(freq(wikiApi, e, g));
+                sum1 += f;
+                sum2 += f * editDistance(e, m);
+            }
+        } catch (Exception e1) {
+            e1.printStackTrace();
         }
 
         avgED = sum2 / sum1;
 
-        return avgED;*/
-        return 0;
+        return avgED;
     }
 
     public static double minEdTitle(WikipediaApiInterface wikiApi, String e, String m) {
@@ -258,28 +265,31 @@ public class SMAPHFeatures {
 
     // Returns a list of anchors used in Wikipedia to link e
     // Assuming e is a valid wikipedia title.
-    private static List<String> anchorSetG(WikipediaApiInterface wikiApi, String e) {
+    private static List<String> anchorSetG(WikipediaApiInterface wikiApi, String e) throws IOException {
         List<String> setG = new ArrayList<>();
 
-        int[] linkIDs = WATRelatednessComputer.getLinks(e);
-        for (int i = 0;i < linkIDs.length;i++) {
-            try {
-                String currTitle = wikiApi.getTitlebyId(linkIDs[i]);
-                setG.add(currTitle);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-        }
+        EntityToAnchors e2a = EntityToAnchors.e2a();
+
+        int ID = wikiApi.getIdByTitle(e);
+
+        for (Pair<String, Integer> anchorAndFreq: e2a.getAnchors(ID))
+            setG.add(anchorAndFreq.first);
+
         return setG;
     }
 
     // Returns the number of times that entity e has been linked in Wiki by anchor a
     // Assuming e is a valid wikipedia title.
-    private static int freq(String e, String a) {
+    private static int freq(WikipediaApiInterface wikiApi, String e, String a) throws IOException {
         int freq = 0;
 
+        EntityToAnchors e2a = EntityToAnchors.e2a();
 
+        int ID = wikiApi.getIdByTitle(e);
 
+        for (Pair<String, Integer> anchorAndFreq: e2a.getAnchors(ID))
+            if (anchorAndFreq.first.equals(a))
+                freq = anchorAndFreq.second;
 
         return freq;
     }
@@ -437,6 +447,48 @@ public class SMAPHFeatures {
         return query;
     }
 
+    private static List<String> getDescriptions(JSONObject q) {
+        List<String> descs = new ArrayList<String>();
+
+        try {
+
+            JSONArray webRes = q.getJSONArray("Web");
+            for (int i = 0;i < webRes.length();i++)
+                descs.add(webRes.getJSONObject(i).getString("Description"));
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+        return descs;
+    }
+
+    private static List<EntityMentionPair> getSetA(JSONObject q) {
+        List<EntityMentionPair> setA = new ArrayList<EntityMentionPair>();
+        TagMeAnnotator tag_me = TagMeAnnotator.getInstance();
+        List<String> descs = getDescriptions(q);
+        List<ArrayList<String>> boldWords = getBoldWords(q);
+
+
+
+        for (int i = 0;i<descs.size(); i++) {
+            String desc = descs.get(i);
+            ArrayList<String> currBW = boldWords.get(i);
+            List<EntityMentionPair> entities = tag_me.getFilteredEntities(desc, rho);
+
+            for (String bw : currBW)
+                for (EntityMentionPair emp : entities) {
+                    String currM = emp.getMention();
+                    if (isOverlap(bw, currM))
+                        setA.add(emp);
+                }
+        }
+
+
+        return setA;
+    }
+
     private static void notImplemented() {
         throw new RuntimeException("Not implemented");
     }
@@ -457,6 +509,24 @@ public class SMAPHFeatures {
         }
 
         return boldWords;
+    }
+
+    private static boolean isOverlap(String s1, String s2) {
+        List<String> s2Arr = Arrays.asList(s2.split(" "));
+
+        for (int i = 0; i < s2Arr.size(); i++) {
+            String subWord = String.join(" ", s2Arr.subList(0,i));
+            if (s1.contains(subWord))
+                return true;
+        }
+
+        for (int i = 0; i < s2Arr.size(); i++) {
+            String subWord = String.join(" ", s2Arr.subList(i, s2Arr.size()-1));
+            if (s1.contains(subWord))
+                return true;
+        }
+
+        return false;
     }
 
     // testPrivateFunctions tests all the private functions of this class. Useful to check for bugs
