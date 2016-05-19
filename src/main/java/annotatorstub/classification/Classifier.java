@@ -1,28 +1,16 @@
 package annotatorstub.classification;
 
 import annotatorstub.annotator.CandidateGenerator;
-import annotatorstub.annotator.FakeAnnotator;
-import annotatorstub.utils.Utils;
-import it.unipi.di.acube.batframework.cache.BenchmarkCache;
 import it.unipi.di.acube.batframework.cache.BenchmarkResults;
-import it.unipi.di.acube.batframework.data.Tag;
-import it.unipi.di.acube.batframework.datasetPlugins.DatasetBuilder;
-import it.unipi.di.acube.batframework.metrics.Metrics;
-import it.unipi.di.acube.batframework.metrics.MetricsResultSet;
-import it.unipi.di.acube.batframework.metrics.StrongTagMatch;
-import it.unipi.di.acube.batframework.problems.A2WDataset;
-import it.unipi.di.acube.batframework.problems.C2WDataset;
-import it.unipi.di.acube.batframework.problems.C2WSystem;
-import it.unipi.di.acube.batframework.utils.AnnotationException;
-import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import libsvm.*;
+
 import java.io.*;
 import java.util.*;
 
 public class Classifier {
     private svm_parameter param;		// set by parse_command_line
     private svm_problem prob;		// set by read_problem
-    private svm_model model;
+    public svm_model model;
     private String input_file_name;		// set by parse_command_line
     private String model_file_name;		// set by parse_command_line
     private String model_string;
@@ -56,6 +44,20 @@ public class Classifier {
 
     public Classifier() {
         model_string = "";
+        model_file_name = "data/svm/model.txt";
+
+        File f = new File(model_file_name);
+        if (f.exists()) {
+            System.out.println("Read svm model from "  + model_file_name);
+            try {
+                model = svm.svm_load_model(model_file_name);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+
     }
 
 
@@ -172,7 +174,7 @@ public class Classifier {
         else
         {
             model = svm.svm_train(prob,param);
-//            svm.svm_save_model(model_file_name,model);
+            svm.svm_save_model(model_file_name,model);
         }
     }
 

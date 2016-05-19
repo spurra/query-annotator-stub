@@ -16,7 +16,7 @@ import java.util.*;
 public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
-	private static final int MAX_LINKS = 50;
+	private static final int MAX_LINKS = 5;
 
 	private static HashMap<String, List<Integer>> queryIdMap;
 
@@ -74,6 +74,9 @@ public class SVMAnnotator implements Sa2WSystem {
 
 	public void trainClassifier() {
 
+		if (classifier.model != null)
+			return;
+
 		List<HashSet<Tag>> computedTags = new Vector<HashSet<Tag>>();
 		int nr = 0;
 		for (String query: queryIdMap.keySet()){
@@ -111,10 +114,9 @@ public class SVMAnnotator implements Sa2WSystem {
 			for (String cand : entity_features.keySet()) {
 				String features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
 				BufferedReader input = new BufferedReader(new StringReader(features));
-				double pred = classifier.predict(input, 0);
-				if (pred == -1.0)
-					res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), 0.1f));
-
+				double pred = classifier.predict(input, 1);
+				res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), (float) pred));
+				System.out.println("Candidate " + cand + "\t score: " + pred);
 
 			}
 
