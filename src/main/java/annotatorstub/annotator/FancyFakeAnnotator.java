@@ -3,6 +3,7 @@ package annotatorstub.annotator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 import annotatorstub.main.BingSearchMain;
+import annotatorstub.utils.EntityMentionPair;
+import annotatorstub.utils.SMAPHFeatures;
 import annotatorstub.utils.WATRelatednessComputer;
 import it.unipi.di.acube.batframework.data.Annotation;
 import it.unipi.di.acube.batframework.data.Mention;
@@ -32,6 +35,7 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
 	private static final int MAX_LINKS = 500;
+	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
 
 	private static HashMap<String, List<Integer>> mentionIdMap;
 
@@ -80,22 +84,24 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 		FancyFakeAnnotator ann = new FancyFakeAnnotator(wikiApi);
 		String query = "error in mathematics calculas";
-		List<String> mention_candidates = FancyFakeAnnotator.getMentionCandidates(query);
+		List<FakeMention> mention_candidates = new FancyFakeAnnotator(wiki).getMentionCandidates(query);
 		//ann.solveSa2W(query);
 		
 	}
 	
-	public static List<String> getMentionCandidates(String query) {
+	public List<FakeMention> getMentionCandidates(String query) {
 		String[] words = query.split(" ");
-		List<String> mention_candidates = new ArrayList<String>();
+		List<FakeMention> mention_candidates = new ArrayList<FakeMention>();
 		// Iterate over every start word and every possible end word (connected) to generate mention candidates
 		for (int start_idx=0;start_idx<words.length;start_idx++) {
 			String mention=words[start_idx];
-			mention_candidates.add(mention);
+			FakeMention m = new FakeMention(mention,start_idx,start_idx);
+			mention_candidates.add(m);
 			System.out.println(mention_candidates.get(mention_candidates.size()-1));
 			for (int end_idx=start_idx+1;end_idx<words.length;end_idx++) {
 				mention=new String(mention + " " + words[end_idx]);
-				mention_candidates.add(mention);
+				m = new FakeMention(mention,start_idx,end_idx);
+				mention_candidates.add(m);
 				System.out.println(mention_candidates.get(mention_candidates.size()-1));
 			}
 		}
@@ -103,8 +109,10 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 	}
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
 		lastTime = System.currentTimeMillis();
+		Set<String> entity_candidates;
 		try {
-			Set<String> entities = CandidateGenerator.get_entity_candidates(text).keySet();
+			entity_candidates = CandidateGenerator.get_entity_candidates(text).keySet();
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -114,32 +122,56 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 		String[] words = text.split(" ");
 		int n = words.length;
 		System.err.println("Find entities for query " + text);
-		List<String> mention_candidates = FancyFakeAnnotator.getMentionCandidates(text);
 		
-		// Iterate through all possible mentions entity pairs and greedily select them according to their anchorsAvgED score
+		// Get all mention candidates
+		List<FakeMention> mention_candidates = new FancyFakeAnnotator(wiki).getMentionCandidates(text);
+		
+		// Iterate through all possible mentions entity pairs and score them according to their anchorsAvgED score
+		List<EntityMentionPair> em_candidates = new ArrayList<EntityMentionPair>();
+		EntityMentionPair pair;
+		for (String entity : entity_candidates) {
+			int wiki_id = -1;
+			try {
+				wiki_id = wiki.getIdByTitle(entity);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			for (FakeMention mention : mention_candidates) {
+				double score=0;
+				try {
+					score=SMAPHFeatures.EdTitle(wiki, entity, mention.name);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				pair = new EntityMentionPair(wiki_id, mention.name, entity, null, score);
+				pair.setMentionPosition(mention.start, mention.end);
+				em_candidates.add(pair);
+			}
+			
+		}
 		HashSet<ScoredAnnotation> result = new HashSet<>();
 		List<Interval> used_intervals = new ArrayList<>();
 
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j <= i; j++) {
-				int left_index = j;
-				int right_index = n - i + j - 1;
+		// greedily select mention entity pairs 
+		Collections.sort(em_candidates);
+		for (EntityMentionPair cand_pair : em_candidates) {
 
-				if (FancyFakeAnnotator.isForbiddenInterval(used_intervals, left_index, right_index))
+				if (FancyFakeAnnotator.isForbiddenInterval(used_intervals, cand_pair.getStartIdx(), cand_pair.getEndIdx()))
 					continue;
 
 				
-				String extract = FakeAnnotator.concatenateStrings(words, left_index, right_index);			
+				String extract = FakeAnnotator.concatenateStrings(words, cand_pair.getStartIdx(), cand_pair.getEndIdx());			
 				int id = checkMention(extract);
 				
 				if (id != -1) {
 					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
-					used_intervals.add(new Interval(left_index, right_index));
+					used_intervals.add(new Interval(cand_pair.getStartIdx(), cand_pair.getEndIdx()));
 				}
 
 
-			}
 		}
+
 
 		lastTime = System.currentTimeMillis() - lastTime;
 		return result;
@@ -223,7 +255,7 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 	}
 	
 	public String getName() {
-		return "Simple yet uneffective query annotator";
+		return "Fancy Fake annotator (no learning)";
 	}
 
 	public static boolean isForbiddenInterval(List<Interval> intervals, int left_index, int right_index) {
@@ -246,6 +278,19 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 
 		public boolean isWithin (int index) {
 			return this.l <= index && index <= this.r;
+		}
+	}
+	
+	public class FakeMention {
+		public int start;
+		public int end;
+		public String name;
+
+		public FakeMention(String name, int start, int end) {
+			this.start=start;
+			this.end=end;
+			this.name=name;
+					
 		}
 	}
 }

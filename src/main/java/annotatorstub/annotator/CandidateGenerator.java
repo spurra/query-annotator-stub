@@ -7,7 +7,7 @@ import java.util.*;
 import annotatorstub.main.BingSearchMain;
 import org.codehaus.jettison.json.JSONObject;
 import annotatorstub.utils.SMAPHFeatures;
-import annotatorstub.utils.TagMeEntity;
+import annotatorstub.utils.EntityMentionPair;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 public class CandidateGenerator {
 
@@ -45,8 +45,8 @@ public class CandidateGenerator {
 			}
 		}
 		if (use_tagme) {
-			List<TagMeEntity> tagme_entities=TagMeAnnotator.getEntities(query);
-			for (TagMeEntity ent : tagme_entities) {
+			List<EntityMentionPair> tagme_entities=TagMeAnnotator.getEntities(query);
+			for (EntityMentionPair ent : tagme_entities) {
 				Map<String,List<Double>> entity_features_words_tagme = get_entites_and_features(ent.getWikiTitle() + " wikipedia",1);
 				for (String key : entity_features_words_tagme.keySet()) {
 					entity_features.put(key, entity_features_words_tagme.get(key));

@@ -1,6 +1,6 @@
 package annotatorstub.main;
 import annotatorstub.annotator.TagMeAnnotator;
-import annotatorstub.utils.TagMeEntity;
+import annotatorstub.utils.EntityMentionPair;
 
 import java.util.List;
 
@@ -17,8 +17,8 @@ public class TestMain {
         System.out.println("\t\t" + example);
         System.out.println();
         System.out.println("Found entities: ");
-        List<TagMeEntity> entities = tag_me.getFilteredEntities(example, rho);
-        for (TagMeEntity entity : entities) {
+        List<EntityMentionPair> entities = tag_me.getFilteredEntities(example, rho);
+        for (EntityMentionPair entity : entities) {
             System.out.println("\t\t" + entity.getWikiTitle() + " [rho = " + Double.toString(entity.getRho()) + "]");
         }
     }

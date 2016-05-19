@@ -2,7 +2,7 @@ package annotatorstub.utils;
 
 import org.json.JSONObject;
 
-public class TagMeEntity {
+public class EntityMentionPair implements Comparable<EntityMentionPair> {
 
     // Id of Wikipedia article
     private int wiki_id;
@@ -14,16 +14,27 @@ public class TagMeEntity {
     private String wiki_abstract;
     // Rho ("Quality measure")
     private double rho;
+	private int start_idx;
+	private int end_idx;
 
-    public TagMeEntity(int wiki_id, String mention, String wiki_title, String wiki_abstract) {
+    public EntityMentionPair(int wiki_id, String mention, String wiki_title, String wiki_abstract) {
+    	
         this.wiki_id = wiki_id;
         this.mention = mention;
         this.wiki_title = wiki_title;
         this.wiki_abstract = wiki_abstract;
     }
+    
+    public EntityMentionPair(int wiki_id, String mention, String wiki_title, String wiki_abstract, double rho) {
+    	this.wiki_id = wiki_id;
+        this.mention = mention;
+        this.wiki_title = wiki_title;
+        this.wiki_abstract = wiki_abstract;
+        this.rho=rho;
+    }
 
     // Routine to convert JSON (as fetched from TagMe) to Entity object
-    public TagMeEntity(JSONObject json_obj) {
+    public EntityMentionPair(JSONObject json_obj) {
         this.wiki_id = json_obj.getInt("id");
         this.mention = json_obj.getString("spot");
         this.wiki_title = json_obj.getString("title");
@@ -51,5 +62,28 @@ public class TagMeEntity {
     public double getRho() {
         return this.rho;
     }
+    
+    public void setMentionPosition(int start_idx, int end_idx) {
+    	this.start_idx=start_idx;
+    	this.end_idx=end_idx;
+    }
+    
+    public int getStartIdx() {
+    	return this.start_idx;
+    }
+    
+    public int getEndIdx() {
+    	return this.end_idx;
+    }
+    
+	public int compareTo(EntityMentionPair other) {
+		
+		double compare_rho = ((EntityMentionPair) other).getRho(); 
+
+		
+		//descending order
+		return (compare_rho > this.rho) ? 1: 0;
+		
+	}	
 
 }

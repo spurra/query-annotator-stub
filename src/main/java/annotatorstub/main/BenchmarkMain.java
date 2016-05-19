@@ -1,5 +1,6 @@
 package annotatorstub.main;
 
+import annotatorstub.annotator.FancyFakeAnnotator;
 import annotatorstub.annotator.SVMAnnotator;
 import it.unipi.di.acube.batframework.cache.BenchmarkCache;
 import it.unipi.di.acube.batframework.data.Annotation;
@@ -31,7 +32,11 @@ public class BenchmarkMain {
 		A2WDataset ds = DatasetBuilder.getGerdaqDevel();
 		//FakeAnnotator ann = new FakeAnnotator(wikiApi);
 		
-		SVMAnnotator ann = new SVMAnnotator(wikiApi);
+		// My fancy fake annotator
+		FancyFakeAnnotator ann = new FancyFakeAnnotator(wikiApi);
+		
+		// SVM annotator
+		//SVMAnnotator ann = new SVMAnnotator(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
 		
 		

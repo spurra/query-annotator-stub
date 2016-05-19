@@ -16,7 +16,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.*;
 
-import annotatorstub.utils.TagMeEntity;
+import annotatorstub.utils.EntityMentionPair;
 
 /**
  * Created by lennart on 5/15/16.
@@ -43,12 +43,12 @@ public class TagMeAnnotator {
     }
 
     // Retrieve all entities (unfiltered)
-    static public List<TagMeEntity> getEntities(String snippet) {
+    static public List<EntityMentionPair> getEntities(String snippet) {
         return TagMeAnnotator.getFilteredEntities(snippet, 0.0d);
     }
 
     // Return a list of all entities that a snippet contains (according to TagMe)
-    static public List<TagMeEntity> getFilteredEntities(String snippet, double rho) {
+    static public List<EntityMentionPair> getFilteredEntities(String snippet, double rho) {
         if (snippet.isEmpty())
             return new ArrayList<>();
 
@@ -85,11 +85,11 @@ public class TagMeAnnotator {
             client.close();
 
             // Extract entities
-            List<TagMeEntity> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
+            List<EntityMentionPair> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
 
             // Filter entities (drop out entities that are too weak)
-            List<TagMeEntity> filtered_entities = new ArrayList<>();
-            for (TagMeEntity entity : entities) {
+            List<EntityMentionPair> filtered_entities = new ArrayList<>();
+            for (EntityMentionPair entity : entities) {
                 if (entity.getRho() >= rho)
                     filtered_entities.add(entity);
             }
@@ -106,15 +106,15 @@ public class TagMeAnnotator {
     }
 
     // Extract the entities from the TagMe's server response
-    static public List<TagMeEntity> extractEntitiesFromJSON(JSONObject json_root) {
-        List<TagMeEntity> result = new ArrayList<>();
+    static public List<EntityMentionPair> extractEntitiesFromJSON(JSONObject json_root) {
+        List<EntityMentionPair> result = new ArrayList<>();
 
         JSONArray json_array = json_root.getJSONArray("annotations");
 
         for (int i = 0; i < json_array.length(); i++) {
             JSONObject json_annotation = json_array.getJSONObject(i);
 
-            result.add(new TagMeEntity(json_annotation));
+            result.add(new EntityMentionPair(json_annotation));
         }
 
         return result;
