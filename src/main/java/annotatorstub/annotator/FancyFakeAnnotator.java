@@ -140,7 +140,7 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 			for (FakeMention mention : mention_candidates) {
 				double score=0;
 				try {
-					score=SMAPHFeatures.EdTitle(wiki, entity, mention.name);
+					score= - SMAPHFeatures.EdTitle(wiki, entity, mention.name);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
