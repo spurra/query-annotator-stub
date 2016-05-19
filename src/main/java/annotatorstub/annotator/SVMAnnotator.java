@@ -90,8 +90,8 @@ public class SVMAnnotator implements Sa2WSystem {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			//nr++;
-			//if (nr > MAX_LINKS) break;
+			nr++;
+			if (nr > MAX_LINKS) break;
 		}
 
 		try {
@@ -111,9 +111,17 @@ public class SVMAnnotator implements Sa2WSystem {
 			for (String cand : entity_features.keySet()) {
 				String features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
 				BufferedReader input = new BufferedReader(new StringReader(features));
-				double pred = classifier.predict(input, 0);
-				if (pred == -1.0)
-					res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), 0.1f));
+				
+				if (true) {
+					double pred = classifier.predict(input, 1);
+					//if (pred>=threshold) 
+						res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), 0.1f));
+						
+				} else {
+					double pred = classifier.predict(input, 0);
+					if (pred == -1.0)
+						res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), 0.1f));
+				}
 
 
 			}
@@ -252,7 +260,7 @@ public class SVMAnnotator implements Sa2WSystem {
 	}
 	
 	public String getName() {
-		return "Simple yet uneffective query annotator";
+		return "Piggyback+SVM enitity linking";
 	}
 
 	public static boolean isForbiddenInterval(List<Interval> intervals, int left_index, int right_index) {

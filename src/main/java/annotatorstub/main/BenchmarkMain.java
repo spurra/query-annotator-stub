@@ -24,11 +24,17 @@ public class BenchmarkMain {
 	public static void main(String[] args) throws Exception {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 
-		A2WDataset ds = DatasetBuilder.getGerdaqTest();
+		// The test set
+		//A2WDataset ds = DatasetBuilder.getGerdaqTest();
+		
+		// The development set
+		A2WDataset ds = DatasetBuilder.getGerdaqDevel();
 		//FakeAnnotator ann = new FakeAnnotator(wikiApi);
+		
 		SVMAnnotator ann = new SVMAnnotator(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
-
+		
+		
 		List<HashSet<Tag>> resTag = BenchmarkCache.doC2WTags(ann, ds);
 		List<HashSet<Annotation>> resAnn = BenchmarkCache.doA2WAnnotations(ann, ds);
 		DumpData.dumpCompareList(ds.getTextInstanceList(), ds.getA2WGoldStandardList(), resAnn, wikiApi);

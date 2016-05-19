@@ -1,8 +1,13 @@
 package annotatorstub.annotator;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.*;
+
 import annotatorstub.main.BingSearchMain;
 import org.codehaus.jettison.json.JSONObject;
 import annotatorstub.utils.SMAPHFeatures;
+import annotatorstub.utils.TagMeEntity;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 public class CandidateGenerator {
 
@@ -12,8 +17,12 @@ public class CandidateGenerator {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		get_entity_candidates("Funny cats wikipedia");
+		get_entity_candidates("los angeles oversized towing");
 	}
+	
+	public static boolean use_invididual_words = false;
+	public static boolean use_tagme = true;	
+	public static int num_invididual_words = 5;
 	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
 	
 	
@@ -25,6 +34,25 @@ public class CandidateGenerator {
 		Map<String,List<Double>> entity_features_wiki = get_entites_and_features(query+ " wikipedia");
 		for (String key : entity_features_wiki.keySet()) {
 			entity_features.put(key, entity_features_wiki.get(key));
+		}
+		if (use_invididual_words) {
+			String[] words = query.split(" ");
+			for (String word : words) {
+				Map<String,List<Double>> entity_features_words_wiki = get_entites_and_features(word + " wikipedia",num_invididual_words);
+				for (String key : entity_features_words_wiki.keySet()) {
+					entity_features.put(key, entity_features_words_wiki.get(key));
+				}
+			}
+		}
+		if (use_tagme) {
+			List<TagMeEntity> tagme_entities=TagMeAnnotator.getEntities(query);
+			for (TagMeEntity ent : tagme_entities) {
+				Map<String,List<Double>> entity_features_words_tagme = get_entites_and_features(ent.getWikiTitle() + " wikipedia",1);
+				for (String key : entity_features_words_tagme.keySet()) {
+					entity_features.put(key, entity_features_words_tagme.get(key));
+				}	
+			}
+			
 		}
 		if (true) {
 			for (String key : entity_features.keySet()) {
@@ -39,18 +67,19 @@ public class CandidateGenerator {
 		return entity_features;
 	}
 	public static Map<String,List<Double>> get_entites_and_features(String query) throws Exception {
+		return get_entites_and_features(query,999);
+	}
+	public static Map<String,List<Double>> get_entites_and_features(String query,int max_results) throws Exception {
 		Map<String,List<Double>> entity_features = new HashMap<String,List<Double>>(); 
 		JSONObject data = BingSearchMain.getQueryResults(query);
 
 		String url;
 		
-		for (Integer idx =0;idx<data.getJSONArray("Web").length();idx++) {
+		for (Integer idx =0;idx<data.getJSONArray("Web").length() && idx<max_results;idx++) {
 			String entity = null;
 			JSONObject res = data.getJSONArray("Web").getJSONObject(idx);
 			url=res.getString("Url");
-			if (url.startsWith("https://en.wikipedia.org/wiki/")) {
-				entity = url.replace("https://en.wikipedia.org/wiki/", "");
-			}
+			entity = get_entity(url);
 			
 			if (entity != null) { // We have found an entity
 				List<Double> features = new ArrayList<Double>();
@@ -74,6 +103,38 @@ public class CandidateGenerator {
 			}
 		}
 		return entity_features;	
+	}
+	static WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
+	private static String get_entity(String url) throws IOException {
+		/**
+		 * Find entity in any language
+		 * and verify that it is there, using the wikipedia API
+		 * if none was found or the verification failed, return null.
+		 * Otherwise return entity string
+		 */
+		String entity=null;
+		int found_id = -1;
+		url=URLDecoder.decode(url, "UTF-8");
+		url=url.replace("https://", "").replace("http://", "");
+		if (url.contains("wikipedia.org/wiki/")) {
+			entity = url.replace("wikipedia.org/wiki/", "");
+			entity=entity.split("\\.")[1];
+			if (url.startsWith("www") && entity.split(":").length>1) {
+				entity=entity.split(":")[1];
+			}
+			found_id = wikiApi.getIdByTitle(entity);
+			if (found_id<0) {
+				System.err.println("Found entity " + entity + " " + found_id + "; " + url);
+			}else {
+				//System.out.println("Found entity " + entity + " " + found_id + "; " + url);
+			}
+		}
+		if (found_id == -1){
+			return null;
+		} else {
+			return entity;
+		}
+		
 	}
 
 }

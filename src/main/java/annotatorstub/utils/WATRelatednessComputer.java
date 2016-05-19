@@ -27,7 +27,7 @@ public class WATRelatednessComputer implements Serializable {
 	private static final String URL_TEMPLATE_JACCARD = "http://wikisense.mkapp.it/rel/id?src=%d&dst=%d&relatedness=jaccard";
 	private static final String URL_TEMPLATE_MW = "http://wikisense.mkapp.it/rel/id?src=%d&dst=%d&relatedness=mw";
 	private static final String URL_TEMPLATE_SPOT = "http://wikisense.mkapp.it/tag/spot?text=%s";
-	private static String resultsCacheFilename = null;
+	private static String resultsCacheFilename = "wiki_cache.txt";
 	
 	public synchronized void increaseFlushCounter()
 			throws FileNotFoundException, IOException {

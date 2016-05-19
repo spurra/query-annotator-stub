@@ -23,7 +23,7 @@ import it.unipi.di.acube.batframework.problems.A2WDataset;
 public class FakeAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = -1f;
-	private static final int MAX_LINKS = 5;
+	private static final int MAX_LINKS = 500;
 
 	private static HashMap<String, List<Integer>> mentionIdMap;
 
@@ -76,8 +76,6 @@ public class FakeAnnotator implements Sa2WSystem {
 	}
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
 		lastTime = System.currentTimeMillis();
-		BingSearchMain bing;
-		String text_clean = null;
 		String[] words = text.split(" ");
 		String[] correct_words = new  String[words.length];
 		/* 
@@ -85,8 +83,8 @@ public class FakeAnnotator implements Sa2WSystem {
 		 */				
 		for (Integer idx=0;idx<words.length;idx++) {
 			try {
-//				bing = new BingSearchMain(words[idx]);
-//				correct_words[idx]=bing.corrected_query;
+				BingSearchMain.getQueryResults(words[idx]);
+				correct_words[idx]=BingSearchMain.corrected_query;
 			} catch (Exception e) {
 				correct_words[idx]=words[idx];
 			}		

@@ -16,6 +16,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.*;
 
+import annotatorstub.utils.TagMeEntity;
+
 /**
  * Created by lennart on 5/15/16.
  */
@@ -41,12 +43,12 @@ public class TagMeAnnotator {
     }
 
     // Retrieve all entities (unfiltered)
-    public List<Entity> getEntities(String snippet) {
-        return this.getFilteredEntities(snippet, 0.0d);
+    static public List<TagMeEntity> getEntities(String snippet) {
+        return TagMeAnnotator.getFilteredEntities(snippet, 0.0d);
     }
 
     // Return a list of all entities that a snippet contains (according to TagMe)
-    public List<Entity> getFilteredEntities(String snippet, double rho) {
+    static public List<TagMeEntity> getFilteredEntities(String snippet, double rho) {
         if (snippet.isEmpty())
             return new ArrayList<>();
 
@@ -83,11 +85,11 @@ public class TagMeAnnotator {
             client.close();
 
             // Extract entities
-            List<Entity> entities = extractEntitiesFromJSON(o);
+            List<TagMeEntity> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
 
             // Filter entities (drop out entities that are too weak)
-            List<Entity> filtered_entities = new ArrayList<>();
-            for (Entity entity : entities) {
+            List<TagMeEntity> filtered_entities = new ArrayList<>();
+            for (TagMeEntity entity : entities) {
                 if (entity.getRho() >= rho)
                     filtered_entities.add(entity);
             }
@@ -104,69 +106,18 @@ public class TagMeAnnotator {
     }
 
     // Extract the entities from the TagMe's server response
-    public List<Entity> extractEntitiesFromJSON(JSONObject json_root) {
-        List<Entity> result = new ArrayList<>();
+    static public List<TagMeEntity> extractEntitiesFromJSON(JSONObject json_root) {
+        List<TagMeEntity> result = new ArrayList<>();
 
         JSONArray json_array = json_root.getJSONArray("annotations");
 
         for (int i = 0; i < json_array.length(); i++) {
             JSONObject json_annotation = json_array.getJSONObject(i);
 
-            result.add(new Entity(json_annotation));
+            result.add(new TagMeEntity(json_annotation));
         }
 
         return result;
     }
 
-    public class Entity {
-
-        // Id of Wikipedia article
-        private int wiki_id;
-        // Mention that has been spotted (e.g. Obama for entity Barack Obama)
-        private String mention;
-        // Title of wikipedia article (eg. en.wikipedia.org/Barack_Obama)
-        private String wiki_title;
-        // Abstract of wikipedia article
-        private String wiki_abstract;
-        // Rho ("Quality measure")
-        private double rho;
-
-        public Entity(int wiki_id, String mention, String wiki_title, String wiki_abstract) {
-            this.wiki_id = wiki_id;
-            this.mention = mention;
-            this.wiki_title = wiki_title;
-            this.wiki_abstract = wiki_abstract;
-        }
-
-        // Routine to convert JSON (as fetched from TagMe) to Entity object
-        public Entity(JSONObject json_obj) {
-            this.wiki_id = json_obj.getInt("id");
-            this.mention = json_obj.getString("spot");
-            this.wiki_title = json_obj.getString("title");
-            this.wiki_abstract = json_obj.getString("abstract");
-
-            this.rho = json_obj.getDouble("rho");
-        }
-
-        public int getWikiId() {
-            return this.wiki_id;
-        }
-
-        public String getMention() {
-            return this.mention;
-        }
-
-        public String getWikiTitle() {
-            return this.wiki_title;
-        }
-
-        public String getWikiAbstract() {
-            return this.wiki_abstract;
-        }
-
-        public double getRho() {
-            return this.rho;
-        }
-
-    }
 }

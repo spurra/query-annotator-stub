@@ -21,8 +21,10 @@ import annotatorstub.utils.WebResult;
 import annotatorstub.utils.SMAPHFeatures;
 
 
-public class BingSearchMain {
+public class BingSearchMain {	
 	public static BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
+	public static String corrected_query;
+	
 	// TODO add related search suggestions?
 	public static JSONObject getQueryResults(String query) throws Exception {
 		//String corrected_query;
@@ -31,7 +33,7 @@ public class BingSearchMain {
 		File f = new File(entity_file);
 		JSONObject a;
 		if (f.exists()) {
-			System.out.println("Read data from "  + entity_file);
+			//System.out.println("Read data from "  + entity_file);
 			String content = new String(Files.readAllBytes(Paths.get(entity_file)));
 			a = new JSONObject(content);
 		} else {	
@@ -46,18 +48,14 @@ public class BingSearchMain {
 			}
 		}
 		JSONObject data = a.getJSONObject("d").getJSONArray("results").getJSONObject(0);
-		return data;
-		/*
+		
+		
 		corrected_query=data.getString("AlteredQuery");
 		if (corrected_query==null || corrected_query.length()==0)  {
 			corrected_query=query;
 		}
-		for (Integer idx =0;idx<data.getJSONArray("Web").length();idx++) {
-			JSONObject res = data.getJSONArray("Web").getJSONObject(idx);
-			results.add(new WebResult(res.getString("Title"),res.getString("Description"),res.getString("Url")));
-		
-		}
-		*/ 
+
+		return data; 
 	}
 	public static void main(String[] args) throws Exception {
 
