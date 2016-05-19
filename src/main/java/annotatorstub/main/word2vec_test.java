@@ -44,14 +44,13 @@ public class word2vec_test {
 
 /*        // Memory problems
         System.out.println("Loading glove model");
-        vec = WordVectorSerializer.loadTxtVectors(new File("models/glove.840B.300d.txt"));
-        System.out.println("Loading time: " + (System.currentTimeMillis() - startTime)/1000 + " sec");*/
+        vec = WordVectorSerializer.loadTxtVectors(new File("models/glove.840B.300d.txt"));*/
 
         // Limited words available
 /*        System.out.println("Loading glove model");
-        vec = WordVectorSerializer.loadTxtVectors(new File("models/glove.6B.300d.txt"));
-        System.out.println("Loading time: " + (System.currentTimeMillis() - startTime)/1000 + " sec");*/
+        vec = WordVectorSerializer.loadTxtVectors(new File("models/glove.6B.300d.txt"));*/
 
+        System.out.println("Loading time: " + (System.currentTimeMillis() - startTime)/1000.0 + " sec");
 
         System.out.println("Calculating similarity");
         startTime = System.currentTimeMillis();
@@ -61,7 +60,7 @@ public class word2vec_test {
         System.out.println("Calculating nearest words");
         startTime = System.currentTimeMillis();
         Collection<String> lst = vec.wordsNearest("government", 10);
-        System.out.println(lst + "\nCalc time: " + (System.currentTimeMillis() - startTime)/1000 + " sec");
+        System.out.println(lst + "\nCalc time: " + (System.currentTimeMillis() - startTime)/1000.0 + " sec");
 
 
 
