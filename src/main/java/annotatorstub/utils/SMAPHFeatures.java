@@ -227,6 +227,73 @@ public class SMAPHFeatures {
         return avg;
     }
 
+    // TODO: Verify
+    public static double ambigMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+
+        return (double) Collections.min(latinA);
+    }
+
+    // TODO: Verify
+    public static double ambigMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+
+        return (double) Collections.max(latinA);
+    }
+
+    // TODO: Verify
+    public static double ambigAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+
+        double avg = 0.0;
+        for (Integer d : latinA)
+            avg += (double) d;
+
+        avg /= latinA.size();
+
+        return avg;
+    }
+
+    // TODO: Verify
+    public static double commMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Double> setC = getSetC(wikiApi, q, e);
+
+        return Collections.min(setC);
+    }
+
+    // TODO: Verify
+    public static double commMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Double> setC = getSetC(wikiApi, q, e);
+
+        return Collections.max(setC);
+    }
+
+    // TODO: Verify
+    public static double commAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Double> setC = getSetC(wikiApi, q, e);
+
+        double avg = 0.0;
+        for (Double d : setC)
+            avg += d;
+
+        avg /= setC.size();
+
+        return avg;
+    }
+
+    // TODO: Verify
+    public static double lpMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Double> setL = getSetL(q, e);
+
+        return Collections.min(setL);
+    }
+
+    // TODO: Verify
+    public static double lpMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Double> setL = getSetL(q, e);
+
+        return Collections.max(setL);
+    }
     /*
     *****************************************
     *                                       *
@@ -592,6 +659,60 @@ public class SMAPHFeatures {
 
 
         return setP;
+    }
+
+    // TODO: Verify
+    private static List<Integer> getSetLatinA(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Integer> setLatinA = new ArrayList<>();
+
+        List<Pair<String, String>> X = getSetX(q);
+
+        for (Pair<String, String> pair : X) {
+            String mention = pair.first;
+
+            int[] links_id = WATRelatednessComputer.getLinks(mention);
+
+            setLatinA.add(links_id.length);
+        }
+
+        return setLatinA;
+    }
+
+    // TODO: Verify
+    private static List<Double> getSetC(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        List<Double> setC = new ArrayList<>();
+
+        List<Pair<String, String>> X = getSetX(q);
+
+        for (Pair<String, String> pair : X) {
+            String mention = pair.first;
+
+            double commonness = 0.0d;
+            try {
+                commonness = WATRelatednessComputer.getCommonness(mention, wikiApi.getIdByTitle(e));
+                setC.add(commonness);
+            } catch (IOException e1) {
+                System.err.println("Unable to fetch id from wikiApi");
+            }
+        }
+
+        return setC;
+    }
+
+    // TODO: Verify
+    private static List<Double> getSetL(JSONObject q, String e) {
+        List<Double> setL = new ArrayList<>();
+
+        List<Pair<String, String>> X = getSetX(q);
+
+        for (Pair<String, String> pair : X) {
+            String mention = pair.first;
+
+            double link_prob = WATRelatednessComputer.getLp(mention);
+            setL.add(link_prob);
+        }
+
+        return setL;
     }
 
     private static void notImplemented() {
