@@ -16,6 +16,7 @@ import org.codehaus.jettison.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -162,6 +163,70 @@ public class SMAPHFeatures {
         return avgLength;
     }
 
+    // Returns the frequency of snippets have mention linked to entity e
+    public static double freq(JSONObject q, String e) {
+        List<String> C = getDescriptions(q);
+
+        double freq1 = 0.0;
+        for (String s : C) {
+            List<EntityMentionPair> A = getSetA(s);
+            for (EntityMentionPair emp : A)
+                if (emp.getWikiTitle().equals(e))
+                    freq1++;
+
+        }
+
+        return freq1 / C.size();
+    }
+
+    public static double avgRank(JSONObject q, String e) {
+        List<String> C = getDescriptions(q);
+
+        double p = 0.0;
+        boolean found = false;
+        for (int i = 0; i < 25; i++) {
+            String s = C.get(i);
+            List<EntityMentionPair> A = getSetA(s);
+            for (EntityMentionPair emp : A) {
+                if (emp.getWikiTitle().equals(e)) {
+                    p += i;
+                    found = true;
+                    break;
+                }
+
+            }
+
+            if (!found)
+                p += 25;
+        }
+
+        return p / 25.0;
+    }
+
+    public static double rhoMin(JSONObject q, String e) {
+        List<Double> P = getSetP(q, e);
+
+        return Collections.min(P);
+    }
+
+    public static double rhoMax(JSONObject q, String e) {
+        List<Double> P = getSetP(q, e);
+
+        return Collections.max(P);
+    }
+
+    public static double rhoAvg(JSONObject q, String e) {
+        List<Double> P = getSetP(q, e);
+
+        double avg = 0.0;
+        for (Double d : P)
+            avg += d;
+
+        avg /= P.size();
+
+        return avg;
+    }
+
     /*
     *****************************************
     *                                       *
@@ -174,13 +239,13 @@ public class SMAPHFeatures {
     public static double anchorsAvgED(WikipediaApiInterface wikiApi, String e, String m) {
 
         double avgED;
-        double sum1 = 0.0;
-        double sum2 = 0.0;
+        double sum1 = 1;
+        double sum2 = -1;
 
         try {
             List<String> G = anchorSetG(wikiApi, e);
             for (String g : G) {
-                double f = Math.sqrt(freq(wikiApi, e, g));
+                double f = Math.sqrt(freqAnchors(wikiApi, e, g));
                 sum1 += f;
                 sum2 += f * editDistance(e, m);
             }
@@ -194,7 +259,7 @@ public class SMAPHFeatures {
     }
 
     public static double minEdTitle(WikipediaApiInterface wikiApi, String e, String m) {
-        double minEDTit = 0.0;
+        double minEDTit = -1;
 
         int ID;
         try {
@@ -213,7 +278,7 @@ public class SMAPHFeatures {
     }
 
     public static double EdTitle(WikipediaApiInterface wikiApi, String e, String m) {
-        double edTit = 0.0;
+        double edTit = -1;
 
         int ID;
         try {
@@ -232,7 +297,7 @@ public class SMAPHFeatures {
     }
 
     public static double commonness(WikipediaApiInterface wikiApi, String e, String m) {
-        double comm = 0.0;
+        double comm = -1;
 
         int ID = 0;
         try {
@@ -247,7 +312,7 @@ public class SMAPHFeatures {
     }
 
     public static double lp(String m) {
-        double lp = 0.0;
+        double lp = -1;
 
         WATRelatednessComputer.getLp(m);
 
@@ -280,7 +345,7 @@ public class SMAPHFeatures {
 
     // Returns the number of times that entity e has been linked in Wiki by anchor a
     // Assuming e is a valid wikipedia title.
-    private static int freq(WikipediaApiInterface wikiApi, String e, String a) throws IOException {
+    private static int freqAnchors(WikipediaApiInterface wikiApi, String e, String a) throws IOException {
         int freq = 0;
 
         EntityToAnchors e2a = EntityToAnchors.e2a();
@@ -494,6 +559,7 @@ public class SMAPHFeatures {
         return setA;
     }
 
+    // Returns the set X. First element of the pair is the mention, the second the snippet.
     private static List<Pair<String, String>> getSetX(JSONObject q) {
         List<Pair<String, String>> setX = new ArrayList<Pair<String, String>>();
         List<String> descs = getDescriptions(q);
@@ -506,6 +572,26 @@ public class SMAPHFeatures {
         }
 
         return setX;
+    }
+
+    private static List<Double> getSetP(JSONObject q, String e) {
+        List<Double> setP = new ArrayList<>();
+        List<String> C = getDescriptions(q);
+
+        List<Pair<String, String>> X = getSetX(q);
+
+        for (String s : C) {
+            List<EntityMentionPair> A = getSetA(s);
+            for (EntityMentionPair emp : A) {
+                if (emp.getWikiTitle().equals(e))
+                    setP.add(emp.getRho());
+                else
+                    setP.add(0.0);
+            }
+        }
+
+
+        return setP;
     }
 
     private static void notImplemented() {
