@@ -316,7 +316,7 @@ public class SMAPHFeatures {
     }
 
     // TODO: Verify
-    public static double mentMEDMax() {
+    public static double mentMEDMax(JSONObject q) {
         List<Pair<String, String>> setX = getSetX(q);
         double max_val = 0.0d;
 
