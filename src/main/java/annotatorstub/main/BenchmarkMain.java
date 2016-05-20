@@ -1,7 +1,7 @@
 package annotatorstub.main;
 
-import annotatorstub.annotator.FancyFakeAnnotator;
 import annotatorstub.annotator.SVMAnnotator;
+import annotatorstub.utils.Utils;
 import it.unipi.di.acube.batframework.cache.BenchmarkCache;
 import it.unipi.di.acube.batframework.data.Annotation;
 import it.unipi.di.acube.batframework.data.Tag;
@@ -18,32 +18,27 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 
-import annotatorstub.annotator.FakeAnnotator;
-import annotatorstub.utils.Utils;
-
 public class BenchmarkMain {
+
 	public static void main(String[] args) throws Exception {
+
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 
 		// The test set
-		//A2WDataset ds = DatasetBuilder.getGerdaqTest();
-		
+		A2WDataset ds = DatasetBuilder.getGerdaqTest();
+
 		// The development set
-		A2WDataset ds = DatasetBuilder.getGerdaqDevel();
+		//A2WDataset ds = DatasetBuilder.getGerdaqDevel();
 		//FakeAnnotator ann = new FakeAnnotator(wikiApi);
 
-
 		// My fancy fake annotator
-		FancyFakeAnnotator ann = new FancyFakeAnnotator(wikiApi);
+		//FancyFakeAnnotator ann = new FancyFakeAnnotator(wikiApi);
 
-		// Load the vector
-		//FancyFakeAnnotator.loadVec();
-		
 		// SVM annotator
-		//SVMAnnotator ann = new SVMAnnotator(wikiApi);
+		SVMAnnotator ann = new SVMAnnotator(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
-		
-		
+
+
 		List<HashSet<Tag>> resTag = BenchmarkCache.doC2WTags(ann, ds);
 		List<HashSet<Annotation>> resAnn = BenchmarkCache.doA2WAnnotations(ann, ds);
 		DumpData.dumpCompareList(ds.getTextInstanceList(), ds.getA2WGoldStandardList(), resAnn, wikiApi);
