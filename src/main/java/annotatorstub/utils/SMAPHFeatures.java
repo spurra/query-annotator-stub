@@ -4,6 +4,7 @@ package annotatorstub.utils;
  */
 
 import annotatorstub.annotator.TagMeAnnotator;
+import annotatorstub.main.BingSearchMain;
 import it.unipi.di.acube.batframework.utils.Pair;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import it.unipi.di.acube.BingInterface;
@@ -636,6 +637,7 @@ public class SMAPHFeatures {
         return descs;
     }
 
+    // Verified
     private static List<EntityMentionPair> getSetA(String s) {
         List<EntityMentionPair> setA = new ArrayList<EntityMentionPair>();
         TagMeAnnotator tag_me = TagMeAnnotator.getInstance();
@@ -777,26 +779,49 @@ public class SMAPHFeatures {
         return boldWords;
     }
 
+    // Verified
     private static boolean isOverlap(String s1, String s2) {
-        List<String> s2Arr = Arrays.asList(s2.split(" "));
+        String s3 = s1;
+
+        // Put the longer string into s1.
+        s1 = s1.length() > s2.length() ? s1 : s2;
+        s2 = s1.equals(s2) ? s3 : s2;
+
+
+        List<String> s2Arr = Arrays.asList(s2.toLowerCase().split(" "));
+        s1 = s1.toLowerCase();
 
         for (int i = 0; i < s2Arr.size(); i++) {
-            String subWord = String.join(" ", s2Arr.subList(0,i));
-            if (s1.contains(subWord))
-                return true;
+            String subWord = String.join(" ", s2Arr.subList(0,i+1));
+
+            if (i+1 == 1) {
+                if (s1.equals(subWord))
+                    return true;
+            }
+            else {
+                if (s1.contains(subWord))
+                    return true;
+            }
         }
 
         for (int i = 0; i < s2Arr.size(); i++) {
-            String subWord = String.join(" ", s2Arr.subList(i, s2Arr.size()-1));
-            if (s1.contains(subWord))
-                return true;
+            String subWord = String.join(" ", s2Arr.subList(i, s2Arr.size()));
+
+            if (s2Arr.size() - i == 1) {
+                if (s1.equals(subWord))
+                    return true;
+            }
+            else {
+                if (s1.contains(subWord))
+                    return true;
+            }
         }
 
         return false;
     }
 
     // testPrivateFunctions tests all the private functions of this class. Useful to check for bugs
-    public static void testPrivateFunctions() {
+    private static void testPrivateFunctions() {
         String word1 = "hellp";
         String word2 = "hello";
         String word3 = "how";
@@ -838,8 +863,50 @@ public class SMAPHFeatures {
         System.out.println();
 
     }
+
+
+    public static void testPrivateFunctionsE3() throws Exception {
+ /*       String s1 = "Look at that motherfucker in his red car";
+        String s2 = "his red car for pussies";
+        String s3 = "that motherfucker";
+        String s4 = "Hey look at that";
+        String s5 = "Completely irrelevant string";
+        System.out.println(isOverlap(s1, s2));
+        System.out.println(isOverlap(s1, s3));
+        System.out.println(isOverlap(s1, s4));
+        System.out.println(isOverlap(s1, s5));
+
+        System.out.println(isOverlap(s2, s1));
+        System.out.println(isOverlap(s3, s1));
+        System.out.println(isOverlap(s4, s1));
+        System.out.println(isOverlap(s5, s1));
+
+        System.out.println(isOverlap(s1, s1));*/
+
+        /*BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");
+        WikipediaApiInterface wikiApi = WikipediaApiInterface.api();*/
+        JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
+        System.out.println(q.toString(4));
+        String e = "Cat";
+
+        List<String> descs = getDescriptions(q);
+        String currD = descs.get(0);
+        List<EntityMentionPair> A = getSetA(currD);
+        /*List<Pair<String, String>> X = getSetX(q);
+        List<Double> P = getSetP(q, e);
+        List<Integer> AL = getSetLatinA(wikiApi, q, e);
+        List<Double> C = getSetC(wikiApi, q, e);
+        List<Double> L = getSetL(q, e);*/
+
+        System.out.println("Break here");
+    }
+
     public static void main(String[] args) {
-    	testPrivateFunctions();
+        try {
+            testPrivateFunctionsE3();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
