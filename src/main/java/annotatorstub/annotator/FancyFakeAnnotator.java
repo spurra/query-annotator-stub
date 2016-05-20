@@ -140,7 +140,7 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 			for (FakeMention mention : mention_candidates) {
 				double score=0;
 				try {
-					score= - SMAPHFeatures.EdTitle(wiki, entity, mention.name);
+					score= - SMAPHFeatures.anchorsAvgED(wiki, entity, mention.name);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -156,7 +156,6 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 		// greedily select mention entity pairs 
 		Collections.sort(em_candidates);
 		for (EntityMentionPair cand_pair : em_candidates) {
-
 				if (FancyFakeAnnotator.isForbiddenInterval(used_intervals, cand_pair.getStartIdx(), cand_pair.getEndIdx()))
 					continue;
 
@@ -168,8 +167,6 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
 					used_intervals.add(new Interval(cand_pair.getStartIdx(), cand_pair.getEndIdx()));
 				}
-
-
 		}
 
 
