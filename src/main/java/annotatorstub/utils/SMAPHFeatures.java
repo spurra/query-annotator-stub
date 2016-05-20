@@ -294,6 +294,46 @@ public class SMAPHFeatures {
 
         return Collections.max(setL);
     }
+
+    // TODO: Verify
+    public static double mentMEDMin(JSONObject q) {
+        List<Pair<String, String>> setX = getSetX(q);
+        double min_val = Integer.MAX_VALUE;
+
+        // Corrected?
+        String query = getQuery(q, true);
+
+        for (Pair<String, String> pair : setX) {
+            String mention = pair.first;
+
+            double min_ed_val = minED(mention, query);
+
+            min_val = (min_ed_val < min_val) ? min_ed_val : min_val;
+        }
+
+
+        return min_val;
+    }
+
+    // TODO: Verify
+    public static double mentMEDMax() {
+        List<Pair<String, String>> setX = getSetX(q);
+        double max_val = 0.0d;
+
+        // Corrected?
+        String query = getQuery(q, true);
+
+        for (Pair<String, String> pair : setX) {
+            String mention = pair.first;
+
+            double min_ed_val = minED(mention, query);
+
+            max_val = (min_ed_val > max_val) ? min_ed_val : max_val;
+        }
+
+
+        return max_val;
+    }
     /*
     *****************************************
     *                                       *
