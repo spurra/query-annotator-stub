@@ -204,7 +204,7 @@ public class SMAPHFeatures {
         return p / 25.0;
     }
 
-    public static double rhoMin(JSONObject q, String e) {
+/*    public static double rhoMin(JSONObject q, String e) {
         List<Double> P = getSetP(q, e);
 
         return Collections.min(P);
@@ -226,7 +226,7 @@ public class SMAPHFeatures {
         avg /= P.size();
 
         return avg;
-    }
+    }*/
 
     // TODO: Verify
     public static double ambigMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
@@ -657,6 +657,8 @@ public class SMAPHFeatures {
         // Get all mention-entity pairs from the TAGME annotator
         List<EntityMentionPair> entities = tag_me.getFilteredEntities(s, rho);
 
+
+
         // Check if any mentions overlap with the boldwords
         for (String bw : boldWords)
             for (EntityMentionPair emp : entities) {
@@ -669,33 +671,43 @@ public class SMAPHFeatures {
     }
 
     // Returns the set X. First element of the pair is the mention, the second the snippet.
+    // Verified. May contain pairs which are identitical
     private static List<Pair<String, String>> getSetX(JSONObject q) {
         List<Pair<String, String>> setX = new ArrayList<Pair<String, String>>();
         List<String> descs = getDescriptions(q);
 
         for (String s : descs) {
             List<EntityMentionPair> A = getSetA(s);
-            for (EntityMentionPair e : A)
+            List<String> mentions = new ArrayList<>();
+            for (EntityMentionPair e : A) {
+                String currM = e.getMention();
+                if (mentions.contains(currM))
+                    continue;
+                mentions.add(currM);
                 setX.add(new Pair<String, String>(e.getMention(), s));
+            }
 
         }
 
         return setX;
     }
 
+    // Verified
     private static List<Double> getSetP(JSONObject q, String e) {
         List<Double> setP = new ArrayList<>();
         List<String> C = getDescriptions(q);
 
-        List<Pair<String, String>> X = getSetX(q);
-
+        List<Pair<Pair<String,String>, String>> seenEMPs = new ArrayList<>();
         for (String s : C) {
             List<EntityMentionPair> A = getSetA(s);
             for (EntityMentionPair emp : A) {
-                if (emp.getWikiTitle().equals(e))
-                    setP.add(emp.getRho());
-                else
-                    setP.add(0.0);
+                if (!Seen(seenEMPs, emp, s)) {
+                    seenEMPs.add(new Pair<>(new Pair<>(emp.getMention(), emp.getWikiTitle()), s));
+                    if (emp.getWikiTitle().equals(e))
+                        setP.add(emp.getRho());
+                    else
+                        setP.add(0.0);
+                }
             }
         }
 
@@ -703,7 +715,18 @@ public class SMAPHFeatures {
         return setP;
     }
 
-    // TODO: Verify
+    // Returns true if the EntityMentionPair curr_emp is contained in list
+    private static boolean Seen(List<Pair<Pair<String,String>, String>> list, EntityMentionPair curr_emp, String s) {
+
+        for (Pair<Pair<String,String>, String> emp : list) {
+            if(emp.first.first.equals(curr_emp.getMention()) && emp.first.second.equals(curr_emp.getWikiTitle()) && emp.second.equals(s))
+                return true;
+        }
+
+        return false;
+    }
+
+    // Verified
     private static List<Integer> getSetLatinA(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Integer> setLatinA = new ArrayList<>();
 
@@ -720,7 +743,7 @@ public class SMAPHFeatures {
         return setLatinA;
     }
 
-    // TODO: Verify
+    // Verified
     private static List<Double> getSetC(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = new ArrayList<>();
 
@@ -741,7 +764,7 @@ public class SMAPHFeatures {
         return setC;
     }
 
-    // TODO: Verify
+    // Verified
     private static List<Double> getSetL(JSONObject q, String e) {
         List<Double> setL = new ArrayList<>();
 
@@ -865,7 +888,7 @@ public class SMAPHFeatures {
     }
 
 
-    public static void testPrivateFunctionsE3() throws Exception {
+    private static void testPrivateFunctionsE3() throws Exception {
  /*       String s1 = "Look at that motherfucker in his red car";
         String s2 = "his red car for pussies";
         String s3 = "that motherfucker";
@@ -883,8 +906,8 @@ public class SMAPHFeatures {
 
         System.out.println(isOverlap(s1, s1));*/
 
-        /*BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");
-        WikipediaApiInterface wikiApi = WikipediaApiInterface.api();*/
+        /*BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");*/
+        WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
         JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
         System.out.println(q.toString(4));
         String e = "Cat";
@@ -892,11 +915,11 @@ public class SMAPHFeatures {
         List<String> descs = getDescriptions(q);
         String currD = descs.get(0);
         List<EntityMentionPair> A = getSetA(currD);
-        /*List<Pair<String, String>> X = getSetX(q);
+        List<Pair<String, String>> X = getSetX(q);
         List<Double> P = getSetP(q, e);
-        List<Integer> AL = getSetLatinA(wikiApi, q, e);
+       List<Integer> AL = getSetLatinA(wikiApi, q, e);
         List<Double> C = getSetC(wikiApi, q, e);
-        List<Double> L = getSetL(q, e);*/
+        List<Double> L = getSetL(q, e);
 
         System.out.println("Break here");
     }
