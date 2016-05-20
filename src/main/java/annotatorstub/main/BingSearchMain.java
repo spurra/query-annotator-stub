@@ -69,7 +69,7 @@ public class BingSearchMain {
 		// query/response format
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 		JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
-		//System.out.println(q.toString(4));
+		System.out.println(q.toString(4));
 		String e = "Cat";
 
 		// Test the private functions.
