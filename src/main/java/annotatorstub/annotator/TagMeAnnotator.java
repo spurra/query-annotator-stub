@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
@@ -17,11 +18,14 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.*;
 
 import annotatorstub.utils.EntityMentionPair;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  * Created by lennart on 5/15/16.
  */
 public class TagMeAnnotator {
+
     // URL of the service
     private static final String TAGME_URL = "http://tagme.di.unipi.it/tag";
 
@@ -48,41 +52,76 @@ public class TagMeAnnotator {
     }
 
     // Return a list of all entities that a snippet contains (according to TagMe)
+//    static public List<EntityMentionPair> getFilteredEntities(String snippet, double rho) {
+//        if (snippet.isEmpty())
+//            return new ArrayList<>();
+//
+//        // Initialization
+//        CloseableHttpClient client = HttpClients.createDefault();
+//        HttpPost httpPost = new HttpPost(TagMeAnnotator.TAGME_URL);
+//
+//        // Hand over parameters
+//        List<NameValuePair> params = new ArrayList<>();
+//        params.add(new BasicNameValuePair("text", snippet));
+//        params.add(new BasicNameValuePair("key", TagMeAnnotator.TAGME_KEY));
+//        params.add(new BasicNameValuePair("include_abstract", "true"));
+//
+//        try {
+//            // Encode
+//            httpPost.setEntity(new UrlEncodedFormEntity(params));
+//
+//            // Retrieve server response
+//            CloseableHttpResponse response = client.execute(httpPost);
+//            BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+//
+//            StringBuffer result = new StringBuffer();
+//            String line = "";
+//            while ((line = rd.readLine()) != null) {
+//                result.append(line);
+//            }
+//
+//            // Convert to JSON
+//            JSONObject o = new JSONObject(result.toString());
+//
+//            // Close client
+//            client.close();
+//
+//            // Extract entities
+//            List<EntityMentionPair> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
+//
+//            // Filter entities (drop out entities that are too weak)
+//            List<EntityMentionPair> filtered_entities = new ArrayList<>();
+//            for (EntityMentionPair entity : entities) {
+//                if (entity.getRho() >= rho)
+//                    filtered_entities.add(entity);
+//            }
+//
+//            return filtered_entities;
+//
+//        } catch (UnsupportedEncodingException e) {
+//            System.err.println("Error while encoding POST request");
+//        } catch (IOException e) {
+//            System.err.println("Error while transmitting POST request");
+//        }
+//
+//        return null;
+//    }
+
+
+    // Return a list of all entities that a snippet contains (according to TagMe)
     static public List<EntityMentionPair> getFilteredEntities(String snippet, double rho) {
         if (snippet.isEmpty())
             return new ArrayList<>();
 
-        // Initialization
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(TagMeAnnotator.TAGME_URL);
-
-        // Hand over parameters
-        List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("text", snippet));
-        params.add(new BasicNameValuePair("key", TagMeAnnotator.TAGME_KEY));
-        params.add(new BasicNameValuePair("include_abstract", "true"));
-
-        // TODO: Demand abstract
-
         try {
-            // Encode
-            httpPost.setEntity(new UrlEncodedFormEntity(params));
+            Document doc = Jsoup.connect(TagMeAnnotator.TAGME_URL)
+                    .data("text", snippet)
+                    .data("key", TagMeAnnotator.TAGME_KEY)
+                    .data("include_abstract", "true")
+                    .ignoreContentType(true)
+                    .post();
 
-            // Retrieve server response
-            CloseableHttpResponse response = client.execute(httpPost);
-            BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-            StringBuffer result = new StringBuffer();
-            String line = "";
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-
-            // Convert to JSON
-            JSONObject o = new JSONObject(result.toString());
-
-            // Close client
-            client.close();
+            JSONObject o = new JSONObject(doc.body().text());
 
             // Extract entities
             List<EntityMentionPair> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
@@ -95,16 +134,13 @@ public class TagMeAnnotator {
             }
 
             return filtered_entities;
-
-        } catch (UnsupportedEncodingException e) {
-            System.err.println("Error while encoding POST request");
         } catch (IOException e) {
-            System.err.println("Error while transmitting POST request");
+            e.printStackTrace();
         }
+
 
         return null;
     }
-
     // Extract the entities from the TagMe's server response
     static public List<EntityMentionPair> extractEntitiesFromJSON(JSONObject json_root) {
         List<EntityMentionPair> result = new ArrayList<>();

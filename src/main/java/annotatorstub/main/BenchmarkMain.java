@@ -22,6 +22,7 @@ import annotatorstub.annotator.FakeAnnotator;
 import annotatorstub.utils.Utils;
 
 public class BenchmarkMain {
+
 	public static void main(String[] args) throws Exception {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 
@@ -33,10 +34,10 @@ public class BenchmarkMain {
 		//FakeAnnotator ann = new FakeAnnotator(wikiApi);
 		
 		// My fancy fake annotator
-		FancyFakeAnnotator ann = new FancyFakeAnnotator(wikiApi);
+		//FancyFakeAnnotator ann = new FancyFakeAnnotator(wikiApi);
 		
 		// SVM annotator
-		//SVMAnnotator ann = new SVMAnnotator(wikiApi);
+		SVMAnnotator ann = new SVMAnnotator(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
 		
 		
