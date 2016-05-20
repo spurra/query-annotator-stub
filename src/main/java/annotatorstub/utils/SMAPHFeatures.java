@@ -37,9 +37,34 @@ import org.jsoup.select.Elements;
 */
 public class SMAPHFeatures {
 
-
+    // Hyperparameters
     private static int searchCount = 100;
     private static double rho = 0.2f;
+
+    // Cached set values
+    private static List<EntityMentionPair> A;
+    private static List<Pair<String, String>> X;
+    private static List<Double> P;
+    private static List<Integer> LatinA;
+    private static List<Double> C;
+    private static List<Double> L;
+
+    private static String oldSnippet_A = "";
+
+    private static String oldQuery_X = "";
+
+    private static String oldQuery_P = "";
+    private static String oldEntity_P = "";
+
+    private static String oldQuery_LA = "";
+    private static String oldEntity_LA = "";
+
+    private static String oldQuery_C = "";
+    private static String oldEntity_C = "";
+
+    private static String oldQuery_L = "";
+
+
     /*
     *******************************
     *                             *
@@ -184,8 +209,8 @@ public class SMAPHFeatures {
         List<String> C = getDescriptions(q);
 
         double p = 0.0;
-        boolean found = false;
         for (int i = 0; i < 25; i++) {
+            boolean found = false;
             String s = C.get(i);
             List<EntityMentionPair> A = getSetA(s);
             for (EntityMentionPair emp : A) {
@@ -204,7 +229,7 @@ public class SMAPHFeatures {
         return p / 25.0;
     }
 
-/*    public static double rhoMin(JSONObject q, String e) {
+    public static double rhoMin(JSONObject q, String e) {
         List<Double> P = getSetP(q, e);
 
         return Collections.min(P);
@@ -226,25 +251,25 @@ public class SMAPHFeatures {
         avg /= P.size();
 
         return avg;
-    }*/
+    }
 
     // TODO: Verify
     public static double ambigMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+        List<Integer> latinA = getSetLatinA(q, e);
 
         return (double) Collections.min(latinA);
     }
 
     // TODO: Verify
     public static double ambigMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+        List<Integer> latinA = getSetLatinA(q, e);
 
         return (double) Collections.max(latinA);
     }
 
     // TODO: Verify
     public static double ambigAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+        List<Integer> latinA = getSetLatinA(q, e);
 
         double avg = 0.0;
         for (Integer d : latinA)
@@ -283,15 +308,15 @@ public class SMAPHFeatures {
     }
 
     // TODO: Verify
-    public static double lpMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Double> setL = getSetL(q, e);
+    public static double lpMin(JSONObject q) {
+        List<Double> setL = getSetL(q);
 
         return Collections.min(setL);
     }
 
     // TODO: Verify
-    public static double lpMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Double> setL = getSetL(q, e);
+    public static double lpMax(JSONObject q) {
+        List<Double> setL = getSetL(q);
 
         return Collections.max(setL);
     }
@@ -639,6 +664,11 @@ public class SMAPHFeatures {
 
     // Verified
     private static List<EntityMentionPair> getSetA(String s) {
+        // Check if we have a cached set available
+        if (s.equals(oldSnippet_A))
+            return A;
+
+
         List<EntityMentionPair> setA = new ArrayList<EntityMentionPair>();
         TagMeAnnotator tag_me = TagMeAnnotator.getInstance();
         List<String> boldWords = new ArrayList<>();
@@ -667,12 +697,22 @@ public class SMAPHFeatures {
                     setA.add(emp);
             }
 
+        // Cache the set.
+        A = setA;
+        oldSnippet_A = s;
+
         return setA;
     }
 
     // Returns the set X. First element of the pair is the mention, the second the snippet.
     // Verified. May contain pairs which are identitical
     private static List<Pair<String, String>> getSetX(JSONObject q) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_X))
+            return X;
+
+
         List<Pair<String, String>> setX = new ArrayList<Pair<String, String>>();
         List<String> descs = getDescriptions(q);
 
@@ -689,11 +729,21 @@ public class SMAPHFeatures {
 
         }
 
+        // Cache the set and remember the old value
+        X = setX;
+        oldQuery_X = query;
+
         return setX;
     }
 
     // Verified
     private static List<Double> getSetP(JSONObject q, String e) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_P) && e.equals(oldEntity_P))
+            return P;
+
+
         List<Double> setP = new ArrayList<>();
         List<String> C = getDescriptions(q);
 
@@ -711,6 +761,11 @@ public class SMAPHFeatures {
             }
         }
 
+        // Cache the set and remember the old values
+        P = setP;
+        oldQuery_P = query;
+        oldEntity_P = e;
+
 
         return setP;
     }
@@ -727,7 +782,13 @@ public class SMAPHFeatures {
     }
 
     // Verified
-    private static List<Integer> getSetLatinA(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+    private static List<Integer> getSetLatinA(JSONObject q, String e) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_LA) && e.equals(oldEntity_LA))
+            return LatinA;
+
+
         List<Integer> setLatinA = new ArrayList<>();
 
         List<Pair<String, String>> X = getSetX(q);
@@ -740,11 +801,22 @@ public class SMAPHFeatures {
             setLatinA.add(links_id.length);
         }
 
+        // Cache the set and remember the parameters
+        LatinA = setLatinA;
+        oldQuery_LA = query;
+        oldEntity_LA = e;
+
         return setLatinA;
     }
 
     // Verified
     private static List<Double> getSetC(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_C) && e.equals(oldEntity_C))
+            return C;
+
+
         List<Double> setC = new ArrayList<>();
 
         List<Pair<String, String>> X = getSetX(q);
@@ -761,11 +833,21 @@ public class SMAPHFeatures {
             }
         }
 
+        // Cache the set and remember the parameters
+        C = setC;
+        oldQuery_C = query;
+        oldEntity_C = e;
+
         return setC;
     }
 
     // Verified
-    private static List<Double> getSetL(JSONObject q, String e) {
+    private static List<Double> getSetL(JSONObject q) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_L))
+            return L;
+
         List<Double> setL = new ArrayList<>();
 
         List<Pair<String, String>> X = getSetX(q);
@@ -776,6 +858,10 @@ public class SMAPHFeatures {
             double link_prob = WATRelatednessComputer.getLp(mention);
             setL.add(link_prob);
         }
+
+        // Cache the set and remember the parameters
+        L = setL;
+        oldQuery_L = query;
 
         return setL;
     }
@@ -909,19 +995,49 @@ public class SMAPHFeatures {
         /*BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");*/
         WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
         JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
+        JSONObject q2 = BingSearchMain.getQueryResults("Kitten wikipedia");
         System.out.println(q.toString(4));
         String e = "Cat";
+        String e2 = "Kitten";
 
+        long startTime;
         List<String> descs = getDescriptions(q);
         String currD = descs.get(0);
+
+        startTime = System.currentTimeMillis();
         List<EntityMentionPair> A = getSetA(currD);
         List<Pair<String, String>> X = getSetX(q);
         List<Double> P = getSetP(q, e);
-       List<Integer> AL = getSetLatinA(wikiApi, q, e);
+        List<Integer> AL = getSetLatinA(q, e);
         List<Double> C = getSetC(wikiApi, q, e);
-        List<Double> L = getSetL(q, e);
+        List<Double> L = getSetL(q);
+        double noCache = (System.currentTimeMillis() - startTime) / 1000.0;
 
+
+        startTime = System.currentTimeMillis();
+        List<EntityMentionPair> A2 = getSetA(currD);
+        List<Pair<String, String>> X2 = getSetX(q);
+        List<Double> P2 = getSetP(q, e);
+        List<Integer> AL2 = getSetLatinA(q, e);
+        List<Double> C2 = getSetC(wikiApi, q, e);
+        List<Double> L2 = getSetL(q);
+        double withCache = (System.currentTimeMillis() - startTime) / 1000.0;
+
+        String currD2 = getDescriptions(q2).get(0);
+        startTime = System.currentTimeMillis();
+        List<EntityMentionPair> A3 = getSetA(currD2);
+        List<Pair<String, String>> X3 = getSetX(q2);
+        List<Double> P3 = getSetP(q, e2);
+        List<Integer> AL3 = getSetLatinA(q, e2);
+        List<Double> C3 = getSetC(wikiApi, q, e2);
+        List<Double> L3 = getSetL(q);
+        double noCache2 = (System.currentTimeMillis() - startTime) / 1000.0;
+
+        System.out.println("No caching: " + noCache + " s");
+        System.out.println("With caching: " + withCache + " s");
+        System.out.println("No cache, new query: " + noCache2 + " s");
         System.out.println("Break here");
+
     }
 
     public static void main(String[] args) {
