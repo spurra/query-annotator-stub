@@ -101,17 +101,17 @@ public class CandidateGenerator {
 				// New features
 				features.add(new Double(SMAPHFeatures.freq(queryData, entity)));
 				features.add(new Double(SMAPHFeatures.avgRank(queryData, entity)));
-				//features.add(new Double(SMAPHFeatures.rhoMin(queryData, entity)));
-				//features.add(new Double(SMAPHFeatures.rhoMax(queryData, entity)));
-				//features.add(new Double(SMAPHFeatures.rhoAvg(queryData, entity)));
+				features.add(new Double(SMAPHFeatures.rhoMin(queryData, entity)));
+				features.add(new Double(SMAPHFeatures.rhoMax(queryData, entity)));
+				features.add(new Double(SMAPHFeatures.rhoAvg(queryData, entity)));
 				features.add(new Double(SMAPHFeatures.ambigMin(wiki, queryData, entity)));
 				features.add(new Double(SMAPHFeatures.ambigMax(wiki, queryData, entity)));
 				features.add(new Double(SMAPHFeatures.ambigAvg(wiki, queryData, entity)));
 				features.add(new Double(SMAPHFeatures.commMin(wiki, queryData, entity)));
 				features.add(new Double(SMAPHFeatures.commMax(wiki, queryData, entity)));
 				features.add(new Double(SMAPHFeatures.commAvg(wiki, queryData, entity)));
-				features.add(new Double(SMAPHFeatures.lpMin(wiki, queryData, entity)));
-				features.add(new Double(SMAPHFeatures.lpMax(wiki, queryData, entity)));
+				features.add(new Double(SMAPHFeatures.lpMin(queryData)));
+				features.add(new Double(SMAPHFeatures.lpMax(queryData)));
 				features.add(new Double(SMAPHFeatures.mentMEDMin(queryData)));
 				features.add(new Double(SMAPHFeatures.mentMEDMax(queryData)));
 
