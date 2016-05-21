@@ -24,7 +24,8 @@ public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = 0f;
 	private static final int MAX_LINKS = 5;
-
+	private static final String feature_path = "data/svm/features/";
+	private int nofp, nofn;
 	private static HashMap<String, List<Integer>> queryIdMap;
 
 	private WikipediaApiInterface wikiApi;
@@ -84,18 +85,25 @@ public class SVMAnnotator implements Sa2WSystem {
 		if (classifier.model != null)
 			return;
 
-		int nofp = 0; int nofn = 0;
+		nofp = 0; nofn = 0;
 		for (String query: queryIdMap.keySet()){
 			Map<String,List<Double>> entity_features = null;
 			try {
 				entity_features = CandidateGenerator.get_entity_candidates(query);
 				for (String cand : entity_features.keySet()) {
+					if (cand.isEmpty())
+						continue;
+					if (addCachedFeatures(entity_features, cand))
+						continue;
+					String feature = ModelConverter.serializeToString(entity_features.get(cand));
 					if (queryIdMap.get(query).contains(wikiApi.getIdByTitle(cand))) {
-						classifier.addPositiveExample(ModelConverter.serializeToString(entity_features.get(cand)));
+						classifier.addPositiveExample(feature);
+						safeFeature("+1", cand, feature);
 						nofp++;
 					}
 					else {
-						classifier.addNegativeExample(ModelConverter.serializeToString(entity_features.get(cand)));
+						classifier.addNegativeExample(feature);
+						safeFeature("-1", cand, feature);
 						nofn++;
 					}
 				}
@@ -114,6 +122,43 @@ public class SVMAnnotator implements Sa2WSystem {
 			e.printStackTrace();
 		}
 
+	}
+
+	private boolean addCachedFeatures(Map<String,List<Double>> entity_features, String cand) {
+		boolean found = false;
+		String cand_file_name = feature_path + cand + ".txt";
+		File f = new File(cand_file_name);
+		if (f.exists()) {
+			found = true;
+			try {
+				String feature = Files.readAllLines(f.toPath()).get(0);
+				if (feature.substring(0,2).equals("+1")) {
+					classifier.addPositiveExample(ModelConverter.serializeToString(entity_features.get(cand)));
+					nofp++;
+				} else if (feature.substring(0,2).equals("-1")) {
+					classifier.addNegativeExample(ModelConverter.serializeToString(entity_features.get(cand)));
+					nofn++;
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return found;
+	}
+
+	private void safeFeature(String label, String cand, String feature) {
+		String cand_file_name = feature_path + cand + ".txt";
+		File f = new File(cand_file_name);
+		BufferedWriter writer = null;
+		try {
+			writer = new BufferedWriter(new FileWriter(f));
+			writer.write(label + " " + feature);
+			//Close writer
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
