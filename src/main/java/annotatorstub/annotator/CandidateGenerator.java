@@ -20,7 +20,7 @@ public class CandidateGenerator {
 		get_entity_candidates("los angeles oversized towing");
 	}
 	
-	public static boolean use_invididual_words = true;
+	public static boolean use_invididual_words = false;
 	public static boolean use_tagme = true;	
 	public static int num_invididual_words = 5;
 	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();

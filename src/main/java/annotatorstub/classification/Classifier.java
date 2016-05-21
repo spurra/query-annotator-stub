@@ -8,11 +8,11 @@ import java.io.*;
 import java.util.*;
 
 public class Classifier {
-    private svm_parameter param;		// set by parse_command_line
+    private svm_parameter param;		// set by read_parameters
     private svm_problem prob;		// set by read_problem
     public svm_model model;
-    private String input_file_name;		// set by parse_command_line
-    private String model_file_name;		// set by parse_command_line
+    private String input_file_name;		// set by read_parameters
+    private String model_file_name;		// set by read_parameters
     private String model_string;
     private String error_msg;
     private int cross_validation;
@@ -123,7 +123,7 @@ public class Classifier {
 
     public void run(String argv[]) throws IOException
     {
-        parse_command_line(argv);
+        read_parameters();
         read_problem();
         error_msg = svm.svm_check_parameter(prob,param);
 
@@ -268,7 +268,7 @@ public class Classifier {
         return Integer.parseInt(s);
     }
 
-    private void parse_command_line(String argv[])
+    private void read_parameters()
     {
         int i;
         svm_print_interface print_func = null;	// default printing to stdout
@@ -293,105 +293,8 @@ public class Classifier {
         cross_validation = 1;
         nr_fold = 10;
 
-/*
-        // parse options
-        for(i=0;i<argv.length;i++)
-        {
-            if(argv[i].charAt(0) != '-') break;
-            //if(++i>=argv.length)
-            //    exit_with_help();
-            switch(argv[i-1].charAt(1))
-            {
-                case 's':
-                    param.svm_type = atoi(argv[i]);
-                    break;
-                case 't':
-                    param.kernel_type = atoi(argv[i]);
-                    break;
-                case 'd':
-                    param.degree = atoi(argv[i]);
-                    break;
-                case 'g':
-                    param.gamma = atof(argv[i]);
-                    break;
-                case 'r':
-                    param.coef0 = atof(argv[i]);
-                    break;
-                case 'n':
-                    param.nu = atof(argv[i]);
-                    break;
-                case 'm':
-                    param.cache_size = atof(argv[i]);
-                    break;
-                case 'c':
-                    param.C = atof(argv[i]);
-                    break;
-                case 'e':
-                    param.eps = atof(argv[i]);
-                    break;
-                case 'p':
-                    param.p = atof(argv[i]);
-                    break;
-                case 'h':
-                    param.shrinking = atoi(argv[i]);
-                    break;
-                case 'b':
-                    param.probability = atoi(argv[i]);
-                    break;
-                case 'q':
-                    print_func = svm_print_null;
-                    i--;
-                    break;
-                case 'v':
-                    cross_validation = 1;
-                    nr_fold = atoi(argv[i]);
-                    if(nr_fold < 2)
-                    {
-                        System.err.print("n-fold cross validation: n must >= 2\n");
-                        exit_with_help();
-                    }
-                    break;
-                case 'w':
-                    ++param.nr_weight;
-                {
-                    int[] old = param.weight_label;
-                    param.weight_label = new int[param.nr_weight];
-                    System.arraycopy(old,0,param.weight_label,0,param.nr_weight-1);
-                }
-
-                {
-                    double[] old = param.weight;
-                    param.weight = new double[param.nr_weight];
-                    System.arraycopy(old,0,param.weight,0,param.nr_weight-1);
-                }
-
-                param.weight_label[param.nr_weight-1] = atoi(argv[i-1].substring(2));
-                param.weight[param.nr_weight-1] = atof(argv[i]);
-                break;
-                default:
-                    System.err.print("Unknown option: " + argv[i-1] + "\n");
-                    //exit_with_help();
-            }
-        }*/
 
         svm.svm_set_print_string_function(print_func);
-
-        // determine filenames
-/*
-        if(i>=argv.length)
-            exit_with_help();
-
-        input_file_name = argv[i];
-
-        if(i<argv.length-1)
-            model_file_name = argv[i+1];
-        else
-        {
-            int p = argv[i].lastIndexOf('/');
-            ++p;	// whew...
-            model_file_name = argv[i].substring(p)+".model";
-        }
-        */
     }
 
     // read in a problem (in svmlight format)

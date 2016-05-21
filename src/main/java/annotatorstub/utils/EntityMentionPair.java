@@ -1,6 +1,7 @@
 package annotatorstub.utils;
 
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 
 public class EntityMentionPair implements Comparable<EntityMentionPair> {
@@ -39,13 +40,19 @@ public class EntityMentionPair implements Comparable<EntityMentionPair> {
     public EntityMentionPair(JSONObject json_obj) throws Exception {
         this.wiki_id = json_obj.getInt("id");
         this.mention = json_obj.getString("spot");
-        if (json_obj.has("title"))
-            this.wiki_title = json_obj.getString("title");
-        else
-            this.wiki_title = wikiApi.getTitlebyId(this.wiki_id);
+        if (json_obj.has("title")) {
+            String title = json_obj.getString("title");
+            this.wiki_title = StringEscapeUtils.unescapeHtml4(title);
+        }
+        else {
+            String wiki_title = wikiApi.getTitlebyId(this.wiki_id);
+            this.wiki_title = StringEscapeUtils.unescapeHtml4(wiki_title);
+        }
 
-        if (json_obj.has("abstract"))
-            this.wiki_abstract = json_obj.getString("abstract");
+        if (json_obj.has("abstract")) {
+            String wiki_abstract = json_obj.getString("abstract");
+            this.wiki_abstract = StringEscapeUtils.unescapeHtml4(wiki_abstract);
+        }
         else
             this.wiki_abstract = "";
 

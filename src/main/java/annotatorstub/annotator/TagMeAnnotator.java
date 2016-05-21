@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -18,8 +16,12 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.*;
 
 import annotatorstub.utils.EntityMentionPair;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Entities;
+import org.jsoup.safety.Cleaner;
+import org.jsoup.safety.Whitelist;
 
 /**
  * Created by lennart on 5/15/16.
@@ -107,43 +109,6 @@ public class TagMeAnnotator {
 //        return null;
 //    }
 
-    public static String sanitizeJson (String jsonText) {
-
-        // Find title in JSON
-        int pos = -1;
-        int colon_pos, next_mark, next_start;
-        int len = jsonText.length();
-
-        String unescaped, escaped;
-        String test;
-        StringBuilder sb = new StringBuilder(jsonText);
-
-        while (true) {
-            // Get next position of title
-            pos = jsonText.indexOf("title", pos + 1);
-
-            if (pos == -1)
-                break;
-
-            colon_pos = jsonText.indexOf(":", pos);
-            next_mark = jsonText.indexOf('"', colon_pos);
-            next_start = jsonText.indexOf("\"start\"", next_mark) - 1;
-
-            test = jsonText.substring(next_mark, next_start);
-            //System.out.println(test);
-            unescaped = jsonText.substring(next_mark + 1, next_start - 1);
-            escaped = "\"" + unescaped.replaceAll("\"","\\\"") + "\"";
-
-            // Replace with fix
-            sb.delete(next_mark, next_start).insert(next_mark, escaped);
-
-        }
-
-        System.out.println(sb);
-
-        return sb.toString();
-    }
-
 
     // Return a list of all entities that a snippet contains (according to TagMe)
     static public List<EntityMentionPair> getFilteredEntities(String snippet, double rho) {
@@ -153,16 +118,17 @@ public class TagMeAnnotator {
             return new ArrayList<>();
 
         try {
-            Document doc = Jsoup.connect(TagMeAnnotator.TAGME_URL)
+
+            String doc = Jsoup.connect(TagMeAnnotator.TAGME_URL)
+                    .method(Connection.Method.POST)
                     .data("text", snippet)
                     .data("key", TagMeAnnotator.TAGME_KEY)
                     .data("include_abstract", "true")
                     .ignoreContentType(true)
-                    .post();
+                    .execute().body();
 
-            String sanitized = TagMeAnnotator.sanitizeJson(doc.body().text());
+            JSONObject o = new JSONObject(doc);
 
-            JSONObject o = new JSONObject(sanitized);
 
             // Extract entities
             List<EntityMentionPair> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
