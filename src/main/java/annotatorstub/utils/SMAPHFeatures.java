@@ -646,7 +646,7 @@ public class SMAPHFeatures {
                     if (response.statusCode() == 200)
                         break;
 
-                } catch (IOException e) {
+                } catch (IOException ex) {
                     System.err.println("Wiki HTTP Retry..");
                     Thread.sleep(300);
                 }
@@ -665,8 +665,8 @@ public class SMAPHFeatures {
                 i++;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception exept) {
+            exept.printStackTrace();
         }
 
 
