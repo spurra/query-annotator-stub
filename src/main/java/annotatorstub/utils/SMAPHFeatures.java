@@ -665,7 +665,7 @@ public class SMAPHFeatures {
 
         try {
             String uri = q.getJSONObject("__metadata").getString("uri");
-            Matcher m = Pattern.compile("Query='[\\w\\s(),&]*'").matcher(uri);
+            Matcher m = Pattern.compile("Query='[^&]*'").matcher(uri);
             if (m.find()) {
                 query = m.group();
                 query = query.substring(7, query.length() - 1);
