@@ -635,8 +635,25 @@ public class SMAPHFeatures {
         String url = "http://www.bing.com/search?q=" + qs.replace(" ", "+") + "&count=" + searchCount;
         int rank = Integer.MAX_VALUE;
 
+
         try {
-            Document doc = Jsoup.connect(url).get();
+
+            Connection.Response response = null;
+            while (true) {
+                try {
+                    response = Jsoup.connect(url).method(Connection.Method.GET).execute();
+
+                    if (response.statusCode() == 200)
+                        break;
+
+                } catch (IOException e) {
+                    System.err.println("Wiki HTTP Retry..");
+                    Thread.sleep(300);
+                }
+            }
+
+
+            Document doc = response.parse();
             Elements searchResults = doc.getElementById("b_results").getElementsByClass("b_algo");
             int i = 0;
             for (Element res : searchResults) {
@@ -648,16 +665,45 @@ public class SMAPHFeatures {
                 i++;
             }
 
-
-
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
 
 
         return rank;
     }
+
+
+//    // Returns the rank of the wikipedia url in the search result
+//    private static int getWikiRank(JSONObject q, String e) {
+//        String qs = getQuery(q, true);
+//        String url = "http://www.bing.com/search?q=" + qs.replace(" ", "+") + "&count=" + searchCount;
+//        int rank = Integer.MAX_VALUE;
+//
+//        try {
+//            Document doc = Jsoup.connect(url).get();
+//            Elements searchResults = doc.getElementById("b_results").getElementsByClass("b_algo");
+//            int i = 0;
+//            for (Element res : searchResults) {
+//                String currTitle = res.getElementsByTag("a").first().text();
+//                if (currTitle.matches("^\uE000?" + e + "\uE001? - \uE000?Wikipedia\uE001?.*")) {
+//                    rank = i;
+//                    break;
+//                }
+//                i++;
+//            }
+//
+//
+//
+//        } catch (IOException e1) {
+//            e1.printStackTrace();
+//        }
+//
+//
+//
+//        return rank;
+//    }
 
     // Returns the query used in q.
     private static String getQuery(JSONObject q, boolean corrected) {
