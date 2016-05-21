@@ -90,8 +90,12 @@ public class SMAPHFeatures {
 
     // Return the position of the wikipedia page of e in the search results. Returns Integer.MAX_VALUE if not found.
     public static int rank(JSONObject q, String e) {
-
-        int rank = getWikiRank(q, e);
+        int rank = 0;
+        try {
+            rank = getWikiRank(q, e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         return rank;
     }
@@ -230,19 +234,35 @@ public class SMAPHFeatures {
     }
 
     public static double rhoMin(JSONObject q, String e) {
+        double min = 0.0;
         List<Double> P = getSetP(q, e);
 
-        return Collections.min(P);
+        if (P.isEmpty())
+            return 0;
+
+        try {
+            min = Collections.min(P);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return min;
     }
 
     public static double rhoMax(JSONObject q, String e) {
         List<Double> P = getSetP(q, e);
+
+        if (P.isEmpty())
+            return 0;
 
         return Collections.max(P);
     }
 
     public static double rhoAvg(JSONObject q, String e) {
         List<Double> P = getSetP(q, e);
+
+        if (P.isEmpty())
+            return 0;
 
         double avg = 0.0;
         for (Double d : P)
@@ -257,6 +277,9 @@ public class SMAPHFeatures {
     public static double ambigMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Integer> latinA = getSetLatinA(q, e);
 
+        if (latinA.isEmpty())
+            return 0;
+
         return (double) Collections.min(latinA);
     }
 
@@ -264,12 +287,18 @@ public class SMAPHFeatures {
     public static double ambigMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Integer> latinA = getSetLatinA(q, e);
 
+        if (latinA.isEmpty())
+            return 0;
+
         return (double) Collections.max(latinA);
     }
 
     // TODO: Verify
     public static double ambigAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Integer> latinA = getSetLatinA(q, e);
+
+        if (latinA.isEmpty())
+            return 0;
 
         double avg = 0.0;
         for (Integer d : latinA)
@@ -284,6 +313,9 @@ public class SMAPHFeatures {
     public static double commMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = getSetC(wikiApi, q, e);
 
+        if (setC.isEmpty())
+            return 0;
+
         return Collections.min(setC);
     }
 
@@ -291,12 +323,18 @@ public class SMAPHFeatures {
     public static double commMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = getSetC(wikiApi, q, e);
 
+        if (setC.isEmpty())
+            return 0;
+
         return Collections.max(setC);
     }
 
     // TODO: Verify
     public static double commAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = getSetC(wikiApi, q, e);
+
+        if (setC.isEmpty())
+            return 0;
 
         double avg = 0.0;
         for (Double d : setC)
@@ -311,12 +349,18 @@ public class SMAPHFeatures {
     public static double lpMin(JSONObject q) {
         List<Double> setL = getSetL(q);
 
+        if (setL.isEmpty())
+            return 0;
+
         return Collections.min(setL);
     }
 
     // TODO: Verify
     public static double lpMax(JSONObject q) {
         List<Double> setL = getSetL(q);
+
+        if (setL.isEmpty())
+            return 0;
 
         return Collections.max(setL);
     }
@@ -621,7 +665,7 @@ public class SMAPHFeatures {
 
         try {
             String uri = q.getJSONObject("__metadata").getString("uri");
-            Matcher m = Pattern.compile("Query='[\\w\\s]*'").matcher(uri);
+            Matcher m = Pattern.compile("Query='[\\w\\s(),]*'").matcher(uri);
             if (m.find()) {
                 query = m.group();
                 query = query.substring(7, query.length() - 1);

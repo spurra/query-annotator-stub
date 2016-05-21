@@ -150,6 +150,7 @@ public class CandidateGenerator {
 		if (found_id == -1){
 			return null;
 		} else {
+			entity = entity.replaceAll("_", " ");
 			return entity;
 		}
 		
