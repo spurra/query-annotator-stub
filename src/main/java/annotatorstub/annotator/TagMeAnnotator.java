@@ -63,21 +63,23 @@ public class TagMeAnnotator {
         try {
 
 
-            Connection.Response doc;
+            Connection.Response doc = null;
             while (true) {
-                doc = Jsoup.connect(TagMeAnnotator.TAGME_URL)
-                        .method(Connection.Method.POST)
-                        .data("text", snippet)
-                        .data("key", TagMeAnnotator.TAGME_KEY)
-                        .data("include_abstract", "true")
-                        .ignoreContentType(true)
-                        .execute();
+                try {
+                    doc = Jsoup.connect(TagMeAnnotator.TAGME_URL)
+                            .method(Connection.Method.POST)
+                            .data("text", snippet)
+                            .data("key", TagMeAnnotator.TAGME_KEY)
+                            .data("include_abstract", "true")
+                            .ignoreContentType(true)
+                            .execute();
 
-                if (doc.statusCode() == 200)
-                    break;
-
-                System.out.println("HTTP Status Code: " + Integer.toString(doc.statusCode()));
-                Thread.sleep(300);
+                    if (doc.statusCode() == 200)
+                        break;
+                } catch (IOException e) {
+                    System.err.println("HTTP Retry..");
+                    Thread.sleep(300);
+                }
             }
 
             String docText = doc.body();
