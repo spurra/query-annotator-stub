@@ -110,6 +110,8 @@ public class TagMeAnnotator {
 
     // Return a list of all entities that a snippet contains (according to TagMe)
     static public List<EntityMentionPair> getFilteredEntities(String snippet, double rho) {
+        List<EntityMentionPair> filtered_entities = new ArrayList<>();
+
         if (snippet.isEmpty())
             return new ArrayList<>();
 
@@ -127,31 +129,34 @@ public class TagMeAnnotator {
             List<EntityMentionPair> entities = TagMeAnnotator.extractEntitiesFromJSON(o);
 
             // Filter entities (drop out entities that are too weak)
-            List<EntityMentionPair> filtered_entities = new ArrayList<>();
+            filtered_entities = new ArrayList<>();
             for (EntityMentionPair entity : entities) {
                 if (entity.getRho() >= rho)
                     filtered_entities.add(entity);
             }
 
-            return filtered_entities;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
+        return filtered_entities;
 
-        return null;
+
     }
     // Extract the entities from the TagMe's server response
-    static public List<EntityMentionPair> extractEntitiesFromJSON(JSONObject json_root) {
+    static public List<EntityMentionPair> extractEntitiesFromJSON(JSONObject json_root) throws Exception {
         List<EntityMentionPair> result = new ArrayList<>();
+
+
 
         JSONArray json_array = json_root.getJSONArray("annotations");
 
         for (int i = 0; i < json_array.length(); i++) {
             JSONObject json_annotation = json_array.getJSONObject(i);
-
             result.add(new EntityMentionPair(json_annotation));
         }
+
+
 
         return result;
     }

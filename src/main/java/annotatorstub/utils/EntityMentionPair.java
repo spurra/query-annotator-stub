@@ -1,9 +1,11 @@
 package annotatorstub.utils;
 
+import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import org.json.JSONObject;
 
 public class EntityMentionPair implements Comparable<EntityMentionPair> {
 
+    private static WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
     // Id of Wikipedia article
     private int wiki_id;
     // Mention that has been spotted (e.g. Obama for entity Barack Obama)
@@ -34,11 +36,18 @@ public class EntityMentionPair implements Comparable<EntityMentionPair> {
     }
 
     // Routine to convert JSON (as fetched from TagMe) to Entity object
-    public EntityMentionPair(JSONObject json_obj) {
+    public EntityMentionPair(JSONObject json_obj) throws Exception {
         this.wiki_id = json_obj.getInt("id");
         this.mention = json_obj.getString("spot");
-        this.wiki_title = json_obj.getString("title");
-        this.wiki_abstract = json_obj.getString("abstract");
+        if (json_obj.has("title"))
+            this.wiki_title = json_obj.getString("title");
+        else
+            this.wiki_title = wikiApi.getTitlebyId(this.wiki_id);
+
+        if (json_obj.has("abstract"))
+            this.wiki_abstract = json_obj.getString("abstract");
+        else
+            this.wiki_abstract = "";
 
         this.rho = json_obj.getDouble("rho");
     }

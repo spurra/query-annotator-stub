@@ -683,8 +683,14 @@ public class SMAPHFeatures {
             boldWords.add(currBold);
         }
 
+        /*List<EntityMentionPair> entities = new ArrayList<>();
+        try {
+            // Get all mention-entity pairs from the TAGME annotator
+            entities = tag_me.getFilteredEntities(s, rho);
+        } catch (Exception e) {
+            System.err.println(e);
+        }*/
 
-        // Get all mention-entity pairs from the TAGME annotator
         List<EntityMentionPair> entities = tag_me.getFilteredEntities(s, rho);
 
 
