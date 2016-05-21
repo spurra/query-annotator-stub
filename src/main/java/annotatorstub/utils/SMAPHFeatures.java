@@ -695,8 +695,12 @@ public class SMAPHFeatures {
         try {
 
             JSONArray webRes = q.getJSONArray("Web");
-            for (int i = 0;i < webRes.length();i++)
-                descs.add(webRes.getJSONObject(i).getString("Description"));
+            for (int i = 0;i < webRes.length();i++) {
+                String currDesc = webRes.getJSONObject(i).getString("Description");
+                currDesc = currDesc.replaceAll("<a href=\".*\">", "");
+                currDesc = currDesc.replaceAll("</a>", "");
+                descs.add(currDesc);
+            }
 
         } catch (JSONException e) {
             e.printStackTrace();
