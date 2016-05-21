@@ -1,10 +1,8 @@
 package annotatorstub.classification;
 
 import java.io.*;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.nio.file.Files;
+import java.util.*;
 
 public class ModelConverter implements Serializable {
 
@@ -29,6 +27,17 @@ public class ModelConverter implements Serializable {
         //}
         return model.toString();
 
+    }
+
+    public static List<Double> deserializeFromString(String string) {
+        List<Double> features = new ArrayList<>();
+
+        String[] temp = string.split(" ");
+        for (int i = 1; i < temp.length; i++) {
+            String[] feature = temp[i].split(":");
+            features.add(new Double(feature[1]));
+        }
+        return features;
     }
 
     void serializeToFile() {

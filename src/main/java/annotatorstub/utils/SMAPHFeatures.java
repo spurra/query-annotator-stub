@@ -213,7 +213,7 @@ public class SMAPHFeatures {
         List<String> C = getDescriptions(q);
 
         double p = 0.0;
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 25 && i < C.size(); i++) {
             boolean found = false;
             String s = C.get(i);
             List<EntityMentionPair> A = getSetA(s);

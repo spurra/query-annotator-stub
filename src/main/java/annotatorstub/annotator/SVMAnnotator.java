@@ -126,17 +126,18 @@ public class SVMAnnotator implements Sa2WSystem {
 
 	private boolean addCachedFeatures(Map<String,List<Double>> entity_features, String cand) {
 		boolean found = false;
-		String cand_file_name = feature_path + cand + ".txt";
+		String cand_file_name = feature_path + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
 		if (f.exists()) {
 			found = true;
+			System.out.println("Read features from cache: " + cand_file_name);
 			try {
 				String feature = Files.readAllLines(f.toPath()).get(0);
 				if (feature.substring(0,2).equals("+1")) {
-					classifier.addPositiveExample(ModelConverter.serializeToString(entity_features.get(cand)));
+					classifier.addPositiveExample(feature.substring(3));
 					nofp++;
 				} else if (feature.substring(0,2).equals("-1")) {
-					classifier.addNegativeExample(ModelConverter.serializeToString(entity_features.get(cand)));
+					classifier.addNegativeExample(feature.substring(3));
 					nofn++;
 				}
 
@@ -148,7 +149,7 @@ public class SVMAnnotator implements Sa2WSystem {
 	}
 
 	private void safeFeature(String label, String cand, String feature) {
-		String cand_file_name = feature_path + cand + ".txt";
+		String cand_file_name = feature_path + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
 		BufferedWriter writer = null;
 		try {
