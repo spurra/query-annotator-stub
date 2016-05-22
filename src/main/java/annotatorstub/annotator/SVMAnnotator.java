@@ -98,12 +98,12 @@ public class SVMAnnotator implements Sa2WSystem {
 					String feature = ModelConverter.serializeToString(entity_features.get(cand));
 					if (queryIdMap.get(query).contains(wikiApi.getIdByTitle(cand))) {
 						classifier.addPositiveExample(feature);
-						safeFeature("+1", cand, feature);
+						safeFeature("+1", query, cand, feature);
 						nofp++;
 					}
 					else {
 						classifier.addNegativeExample(feature);
-						safeFeature("-1", cand, feature);
+						safeFeature("-1", query, cand, feature);
 						nofn++;
 					}
 				}
@@ -148,8 +148,8 @@ public class SVMAnnotator implements Sa2WSystem {
 		return found;
 	}
 
-	private void safeFeature(String label, String cand, String feature) {
-		String cand_file_name = feature_path + cand.replace("/", "_") + ".txt";
+	private void safeFeature(String label, String query, String cand, String feature) {
+		String cand_file_name = feature_path + query + ":" + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
 		BufferedWriter writer = null;
 		try {
