@@ -93,7 +93,7 @@ public class SVMAnnotator implements Sa2WSystem {
 				for (String cand : entity_features.keySet()) {
 					if (cand.isEmpty())
 						continue;
-					if (addCachedFeatures(entity_features, cand))
+					if (addCachedFeatures(entity_features, query, cand))
 						continue;
 					String feature = ModelConverter.serializeToString(entity_features.get(cand));
 					if (queryIdMap.get(query).contains(wikiApi.getIdByTitle(cand))) {
@@ -124,9 +124,9 @@ public class SVMAnnotator implements Sa2WSystem {
 
 	}
 
-	private boolean addCachedFeatures(Map<String,List<Double>> entity_features, String cand) {
+	private boolean addCachedFeatures(Map<String,List<Double>> entity_features, String query, String cand) {
 		boolean found = false;
-		String cand_file_name = feature_path + cand.replace("/", "_") + ".txt";
+		String cand_file_name = feature_path + query.replace("/", "_") + ":" + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
 		if (f.exists()) {
 			found = true;
@@ -145,11 +145,37 @@ public class SVMAnnotator implements Sa2WSystem {
 				e.printStackTrace();
 			}
 		}
+		else {
+			String old_cand_file_name = feature_path + cand.replace("/", "_") + ".txt";
+			File f_old = new File(old_cand_file_name);
+			if (f_old.exists()) {
+				found = true;
+				System.out.println("Converting old feature file " + old_cand_file_name);
+				String feature = null;
+				try {
+					feature = Files.readAllLines(f_old.toPath()).get(0);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				if (feature.substring(0,2).equals("+1")) {
+					safeFeature("+1", query, cand, feature.substring(3));
+				} else if (feature.substring(0,2).equals("-1")) {
+					safeFeature("-1", query, cand, feature.substring(3));
+				}
+
+				if(f_old.delete()){
+					System.out.println("Old feature file " + f_old.getName() + " is deleted!");
+				}else{
+					System.out.println("Delete operation is failed.");
+				}
+
+			}
+		}
 		return found;
 	}
 
 	private void safeFeature(String label, String query, String cand, String feature) {
-		String cand_file_name = feature_path + query + ":" + cand.replace("/", "_") + ".txt";
+		String cand_file_name = feature_path + query.replace("/", "_") + ":" + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
 		BufferedWriter writer = null;
 		try {

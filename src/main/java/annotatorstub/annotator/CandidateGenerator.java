@@ -26,6 +26,7 @@ public class CandidateGenerator {
 	public static boolean use_invididual_words = true;
 	public static boolean use_tagme = true;	
 	public static int num_invididual_words = 5;
+	private static String origQuery;
 	private static final String feature_path = "data/svm/features/";
 	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
 	
@@ -34,7 +35,7 @@ public class CandidateGenerator {
 		/**
 		 *  Compute (entity,features) pairs given a string
 		 */
-
+		origQuery = query;
 		Map<String,List<Double>> entity_features = get_entites_and_features(query);
 		Map<String,List<Double>> entity_features_wiki = get_entites_and_features(query+ " wikipedia");
 		for (String key : entity_features_wiki.keySet()) {
@@ -89,10 +90,12 @@ public class CandidateGenerator {
 			if (entity != null) { // We have found an entity
 
 				// Skip if cached features
-				String cand_file_name = feature_path + entity.replace("/", "_") + ".txt";
+				String cand_file_name = feature_path + origQuery.replace("/", "_") + ":" + entity.replace("/", "_") + ".txt";
 				File f = new File(cand_file_name);
+				String old_cand_file_name = feature_path + entity.replace("/", "_") + ".txt";
+				File f_old = new File(old_cand_file_name);
 				List<Double> features = new ArrayList<Double>();
-				if (!f.exists()) {
+				if (!f.exists() && !f_old.exists()) {
 
 					// Compute global features
 					features.add(new Double(SMAPHFeatures.webTotal(queryData)));

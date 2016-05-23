@@ -61,12 +61,12 @@ public class Classifier {
 
 
     public void addPositiveExample(String ex) {
-        model_string += "+1 " + ex;
+        model_string += "+1 " + ex + "\n";
         System.out.println("+1 " + ex);
     }
 
     public void addNegativeExample(String ex) {
-        model_string += "-1 " + ex;
+        model_string += "-1 " + ex + "\n";
         System.out.println("-1 " + ex);
     }
 
@@ -265,7 +265,13 @@ public class Classifier {
 
     private static int atoi(String s)
     {
-        return Integer.parseInt(s);
+        int i = -1;
+        try {
+            i = Integer.parseInt(s);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return i;
     }
 
     private void read_parameters()
