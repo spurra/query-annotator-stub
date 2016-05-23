@@ -1,5 +1,6 @@
 package annotatorstub.annotator;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,6 +10,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 
 import annotatorstub.main.BingSearchMain;
 import annotatorstub.utils.EntityMentionPair;
@@ -36,7 +40,7 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 	private static float threshold = -1f;
 	private static final int MAX_LINKS = 500;
 	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
-
+	private static WordVectors vec;
 	private static HashMap<String, List<Integer>> mentionIdMap;
 
 	private WikipediaApiInterface wikiApi;
@@ -108,6 +112,15 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 		return mention_candidates;
 	}
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
+		if (false && vec == null) {
+			System.out.println("Load word2vec model");
+			try {
+				vec = WordVectorSerializer.loadGoogleModel(new File("models/GoogleNews-vectors-negative300.bin.gz"), true);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		lastTime = System.currentTimeMillis();
 		Set<String> entity_candidates;
 		try {
@@ -140,10 +153,14 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 			for (FakeMention mention : mention_candidates) {
 				double score=0;
 				try {
-					score = SMAPHFeatures.EdTitle(wiki, entity, mention.name);
+					String e_clean = entity.replace("_"," ").split("\\(")[0];
+					//score= - SMAPHFeatures.anchorsAvgED(wiki, e_clean, mention.name);
+					//score = score / Math.sqrt(e_clean.length()*mention.name.length());
+					score=  SMAPHFeatures.word2vec_sim(vec, entity, mention.name);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				
 				pair = new EntityMentionPair(wiki_id, mention.name, entity, null, score);
 				pair.setMentionPosition(mention.start, mention.end);
 				em_candidates.add(pair);
@@ -156,7 +173,6 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 		// greedily select mention entity pairs 
 		Collections.sort(em_candidates);
 		for (EntityMentionPair cand_pair : em_candidates) {
-
 				if (FancyFakeAnnotator.isForbiddenInterval(used_intervals, cand_pair.getStartIdx(), cand_pair.getEndIdx()))
 					continue;
 
@@ -165,11 +181,10 @@ public class FancyFakeAnnotator implements Sa2WSystem {
 				int id = checkMention(extract);
 				
 				if (id != -1) {
-					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
+					System.out.println("Select " + cand_pair.getMention() + "->" + cand_pair.getWikiTitle() + "; score: " + Double.toString(cand_pair.getRho()));
+					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, (float)cand_pair.getRho()));
 					used_intervals.add(new Interval(cand_pair.getStartIdx(), cand_pair.getEndIdx()));
 				}
-
-
 		}
 
 
