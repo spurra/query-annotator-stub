@@ -93,7 +93,7 @@ public class SVMAnnotator implements Sa2WSystem {
 				for (String cand : entity_features.keySet()) {
 					if (cand.isEmpty())
 						continue;
-					if (addCachedFeatures(entity_features, query, cand))
+					if (addCachedFeatures(query, cand))
 						continue;
 					String feature = ModelConverter.serializeToString(entity_features.get(cand));
 					if (queryIdMap.get(query).contains(wikiApi.getIdByTitle(cand))) {
@@ -123,8 +123,21 @@ public class SVMAnnotator implements Sa2WSystem {
 		}
 
 	}
-
-	private boolean addCachedFeatures(Map<String,List<Double>> entity_features, String query, String cand) {
+	private String readCachedFeatures(String query, String cand) {
+		String features = "";
+		String cand_file_name = feature_path + query.replace("/", "_") + ":" + cand.replace("/", "_") + ".txt";
+		File f = new File(cand_file_name);
+		if (f.exists()) {
+			System.out.println("Read features from cache: " + cand_file_name);
+			try {
+				features = Files.readAllLines(f.toPath()).get(0);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return features;
+	}
+	private boolean addCachedFeatures(String query, String cand) {
 		boolean found = false;
 		String cand_file_name = feature_path + query.replace("/", "_") + ":" + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
@@ -196,7 +209,13 @@ public class SVMAnnotator implements Sa2WSystem {
 			Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates(text);
 			List<String> lines = new ArrayList<>();
 			for (String cand : entity_features.keySet()) {
-				String features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
+				if (cand.isEmpty())
+					continue;
+				String features = readCachedFeatures(text, cand);
+				if (features.isEmpty()) {
+					features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
+					safeFeature("", text, cand, features);
+				}
 				BufferedReader input = new BufferedReader(new StringReader(features));
 				double pred = classifier.predict(input, 1);
 				if (pred > threshold)
