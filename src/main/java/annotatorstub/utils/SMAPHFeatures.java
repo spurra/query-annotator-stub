@@ -4,6 +4,7 @@ package annotatorstub.utils;
  */
 
 import annotatorstub.annotator.TagMeAnnotator;
+import annotatorstub.main.BingSearchMain;
 import it.unipi.di.acube.batframework.utils.Pair;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 import it.unipi.di.acube.BingInterface;
@@ -38,9 +39,34 @@ import org.jsoup.select.Elements;
 */
 public class SMAPHFeatures {
 
-
+    // Hyperparameters
     private static int searchCount = 100;
     private static double rho = 0.2f;
+
+    // Cached set values
+    private static List<EntityMentionPair> A;
+    private static List<Pair<String, String>> X;
+    private static List<Double> P;
+    private static List<Integer> LatinA;
+    private static List<Double> C;
+    private static List<Double> L;
+
+    private static String oldSnippet_A = "";
+
+    private static String oldQuery_X = "";
+
+    private static String oldQuery_P = "";
+    private static String oldEntity_P = "";
+
+    private static String oldQuery_LA = "";
+    private static String oldEntity_LA = "";
+
+    private static String oldQuery_C = "";
+    private static String oldEntity_C = "";
+
+    private static String oldQuery_L = "";
+
+
     /*
     *******************************
     *                             *
@@ -66,8 +92,12 @@ public class SMAPHFeatures {
 
     // Return the position of the wikipedia page of e in the search results. Returns Integer.MAX_VALUE if not found.
     public static int rank(JSONObject q, String e) {
-
-        int rank = getWikiRank(q, e);
+        int rank = 0;
+        try {
+            rank = getWikiRank(q, e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         return rank;
     }
@@ -193,8 +223,8 @@ public class SMAPHFeatures {
         List<String> C = getDescriptions(q);
 
         double p = 0.0;
-        boolean found = false;
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 25 && i < C.size(); i++) {
+            boolean found = false;
             String s = C.get(i);
             List<EntityMentionPair> A = getSetA(s);
             for (EntityMentionPair emp : A) {
@@ -214,19 +244,35 @@ public class SMAPHFeatures {
     }
 
     public static double rhoMin(JSONObject q, String e) {
+        double min = 0.0;
         List<Double> P = getSetP(q, e);
 
-        return Collections.min(P);
+        if (P.isEmpty())
+            return 0;
+
+        try {
+            min = Collections.min(P);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return min;
     }
 
     public static double rhoMax(JSONObject q, String e) {
         List<Double> P = getSetP(q, e);
+
+        if (P.isEmpty())
+            return 0;
 
         return Collections.max(P);
     }
 
     public static double rhoAvg(JSONObject q, String e) {
         List<Double> P = getSetP(q, e);
+
+        if (P.isEmpty())
+            return 0;
 
         double avg = 0.0;
         for (Double d : P)
@@ -239,21 +285,30 @@ public class SMAPHFeatures {
 
     // TODO: Verify
     public static double ambigMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+        List<Integer> latinA = getSetLatinA(q, e);
+
+        if (latinA.isEmpty())
+            return 0;
 
         return (double) Collections.min(latinA);
     }
 
     // TODO: Verify
     public static double ambigMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+        List<Integer> latinA = getSetLatinA(q, e);
+
+        if (latinA.isEmpty())
+            return 0;
 
         return (double) Collections.max(latinA);
     }
 
     // TODO: Verify
     public static double ambigAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Integer> latinA = getSetLatinA(wikiApi, q, e);
+        List<Integer> latinA = getSetLatinA(q, e);
+
+        if (latinA.isEmpty())
+            return 0;
 
         double avg = 0.0;
         for (Integer d : latinA)
@@ -268,6 +323,9 @@ public class SMAPHFeatures {
     public static double commMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = getSetC(wikiApi, q, e);
 
+        if (setC.isEmpty())
+            return 0;
+
         return Collections.min(setC);
     }
 
@@ -275,12 +333,18 @@ public class SMAPHFeatures {
     public static double commMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = getSetC(wikiApi, q, e);
 
+        if (setC.isEmpty())
+            return 0;
+
         return Collections.max(setC);
     }
 
     // TODO: Verify
     public static double commAvg(WikipediaApiInterface wikiApi, JSONObject q, String e) {
         List<Double> setC = getSetC(wikiApi, q, e);
+
+        if (setC.isEmpty())
+            return 0;
 
         double avg = 0.0;
         for (Double d : setC)
@@ -292,15 +356,21 @@ public class SMAPHFeatures {
     }
 
     // TODO: Verify
-    public static double lpMin(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Double> setL = getSetL(q, e);
+    public static double lpMin(JSONObject q) {
+        List<Double> setL = getSetL(q);
+
+        if (setL.isEmpty())
+            return 0;
 
         return Collections.min(setL);
     }
 
     // TODO: Verify
-    public static double lpMax(WikipediaApiInterface wikiApi, JSONObject q, String e) {
-        List<Double> setL = getSetL(q, e);
+    public static double lpMax(JSONObject q) {
+        List<Double> setL = getSetL(q);
+
+        if (setL.isEmpty())
+            return 0;
 
         return Collections.max(setL);
     }
@@ -575,8 +645,25 @@ public class SMAPHFeatures {
         String url = "http://www.bing.com/search?q=" + qs.replace(" ", "+") + "&count=" + searchCount;
         int rank = Integer.MAX_VALUE;
 
+
         try {
-            Document doc = Jsoup.connect(url).get();
+
+            Connection.Response response = null;
+            while (true) {
+                try {
+                    response = Jsoup.connect(url).method(Connection.Method.GET).execute();
+
+                    if (response.statusCode() == 200)
+                        break;
+
+                } catch (IOException ex) {
+                    System.err.println("Wiki HTTP Retry..");
+                    Thread.sleep(300);
+                }
+            }
+
+
+            Document doc = response.parse();
             Elements searchResults = doc.getElementById("b_results").getElementsByClass("b_algo");
             int i = 0;
             for (Element res : searchResults) {
@@ -588,10 +675,8 @@ public class SMAPHFeatures {
                 i++;
             }
 
-
-
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (Exception exept) {
+            exept.printStackTrace();
         }
 
 
@@ -599,13 +684,44 @@ public class SMAPHFeatures {
         return rank;
     }
 
+
+//    // Returns the rank of the wikipedia url in the search result
+//    private static int getWikiRank(JSONObject q, String e) {
+//        String qs = getQuery(q, true);
+//        String url = "http://www.bing.com/search?q=" + qs.replace(" ", "+") + "&count=" + searchCount;
+//        int rank = Integer.MAX_VALUE;
+//
+//        try {
+//            Document doc = Jsoup.connect(url).get();
+//            Elements searchResults = doc.getElementById("b_results").getElementsByClass("b_algo");
+//            int i = 0;
+//            for (Element res : searchResults) {
+//                String currTitle = res.getElementsByTag("a").first().text();
+//                if (currTitle.matches("^\uE000?" + e + "\uE001? - \uE000?Wikipedia\uE001?.*")) {
+//                    rank = i;
+//                    break;
+//                }
+//                i++;
+//            }
+//
+//
+//
+//        } catch (IOException e1) {
+//            e1.printStackTrace();
+//        }
+//
+//
+//
+//        return rank;
+//    }
+
     // Returns the query used in q.
     private static String getQuery(JSONObject q, boolean corrected) {
         String query = "";
 
         try {
             String uri = q.getJSONObject("__metadata").getString("uri");
-            Matcher m = Pattern.compile("Query='[\\w\\s]*'").matcher(uri);
+            Matcher m = Pattern.compile("Query='[^&]*'").matcher(uri);
             if (m.find()) {
                 query = m.group();
                 query = query.substring(7, query.length() - 1);
@@ -635,8 +751,12 @@ public class SMAPHFeatures {
         try {
 
             JSONArray webRes = q.getJSONArray("Web");
-            for (int i = 0;i < webRes.length();i++)
-                descs.add(webRes.getJSONObject(i).getString("Description"));
+            for (int i = 0;i < webRes.length();i++) {
+                String currDesc = webRes.getJSONObject(i).getString("Description");
+                currDesc = currDesc.replaceAll("<a href=\".*\">", "");
+                currDesc = currDesc.replaceAll("</a>", "");
+                descs.add(currDesc);
+            }
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -646,7 +766,13 @@ public class SMAPHFeatures {
         return descs;
     }
 
+    // Verified
     private static List<EntityMentionPair> getSetA(String s) {
+        // Check if we have a cached set available
+        if (s.equals(oldSnippet_A))
+            return A;
+
+
         List<EntityMentionPair> setA = new ArrayList<EntityMentionPair>();
         TagMeAnnotator tag_me = TagMeAnnotator.getInstance();
         List<String> boldWords = new ArrayList<>();
@@ -661,9 +787,17 @@ public class SMAPHFeatures {
             boldWords.add(currBold);
         }
 
+        /*List<EntityMentionPair> entities = new ArrayList<>();
+        try {
+            // Get all mention-entity pairs from the TAGME annotator
+            entities = tag_me.getFilteredEntities(s, rho);
+        } catch (Exception e) {
+            System.err.println(e);
+        }*/
 
-        // Get all mention-entity pairs from the TAGME annotator
         List<EntityMentionPair> entities = tag_me.getFilteredEntities(s, rho);
+
+
 
         // Check if any mentions overlap with the boldwords
         for (String bw : boldWords)
@@ -673,46 +807,98 @@ public class SMAPHFeatures {
                     setA.add(emp);
             }
 
+        // Cache the set.
+        A = setA;
+        oldSnippet_A = s;
+
         return setA;
     }
 
     // Returns the set X. First element of the pair is the mention, the second the snippet.
+    // Verified. May contain pairs which are identitical
     private static List<Pair<String, String>> getSetX(JSONObject q) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_X))
+            return X;
+
+
         List<Pair<String, String>> setX = new ArrayList<Pair<String, String>>();
         List<String> descs = getDescriptions(q);
 
         for (String s : descs) {
             List<EntityMentionPair> A = getSetA(s);
-            for (EntityMentionPair e : A)
+            List<String> mentions = new ArrayList<>();
+            for (EntityMentionPair e : A) {
+                String currM = e.getMention();
+                if (mentions.contains(currM))
+                    continue;
+                mentions.add(currM);
                 setX.add(new Pair<String, String>(e.getMention(), s));
+            }
 
         }
+
+        // Cache the set and remember the old value
+        X = setX;
+        oldQuery_X = query;
 
         return setX;
     }
 
+    // Verified
     private static List<Double> getSetP(JSONObject q, String e) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_P) && e.equals(oldEntity_P))
+            return P;
+
+
         List<Double> setP = new ArrayList<>();
         List<String> C = getDescriptions(q);
 
-        List<Pair<String, String>> X = getSetX(q);
-
+        List<Pair<Pair<String,String>, String>> seenEMPs = new ArrayList<>();
         for (String s : C) {
             List<EntityMentionPair> A = getSetA(s);
             for (EntityMentionPair emp : A) {
-                if (emp.getWikiTitle().equals(e))
-                    setP.add(emp.getRho());
-                else
-                    setP.add(0.0);
+                if (!Seen(seenEMPs, emp, s)) {
+                    seenEMPs.add(new Pair<>(new Pair<>(emp.getMention(), emp.getWikiTitle()), s));
+                    if (emp.getWikiTitle().equals(e))
+                        setP.add(emp.getRho());
+                    else
+                        setP.add(0.0);
+                }
             }
         }
+
+        // Cache the set and remember the old values
+        P = setP;
+        oldQuery_P = query;
+        oldEntity_P = e;
 
 
         return setP;
     }
 
-    // TODO: Verify
-    private static List<Integer> getSetLatinA(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+    // Returns true if the EntityMentionPair curr_emp is contained in list
+    private static boolean Seen(List<Pair<Pair<String,String>, String>> list, EntityMentionPair curr_emp, String s) {
+
+        for (Pair<Pair<String,String>, String> emp : list) {
+            if(emp.first.first.equals(curr_emp.getMention()) && emp.first.second.equals(curr_emp.getWikiTitle()) && emp.second.equals(s))
+                return true;
+        }
+
+        return false;
+    }
+
+    // Verified
+    private static List<Integer> getSetLatinA(JSONObject q, String e) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_LA) && e.equals(oldEntity_LA))
+            return LatinA;
+
+
         List<Integer> setLatinA = new ArrayList<>();
 
         List<Pair<String, String>> X = getSetX(q);
@@ -725,11 +911,22 @@ public class SMAPHFeatures {
             setLatinA.add(links_id.length);
         }
 
+        // Cache the set and remember the parameters
+        LatinA = setLatinA;
+        oldQuery_LA = query;
+        oldEntity_LA = e;
+
         return setLatinA;
     }
 
-    // TODO: Verify
+    // Verified
     private static List<Double> getSetC(WikipediaApiInterface wikiApi, JSONObject q, String e) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_C) && e.equals(oldEntity_C))
+            return C;
+
+
         List<Double> setC = new ArrayList<>();
 
         List<Pair<String, String>> X = getSetX(q);
@@ -746,13 +943,23 @@ public class SMAPHFeatures {
             }
         }
 
+        // Cache the set and remember the parameters
+        C = setC;
+        oldQuery_C = query;
+        oldEntity_C = e;
+
         return setC;
     }
     
 
 
-    // TODO: Verify
-    private static List<Double> getSetL(JSONObject q, String e) {
+    // Verified
+    private static List<Double> getSetL(JSONObject q) {
+        // Check if we have a cached set available
+        String query = getQuery(q, false);
+        if (query.equals(oldQuery_L))
+            return L;
+
         List<Double> setL = new ArrayList<>();
 
         List<Pair<String, String>> X = getSetX(q);
@@ -763,6 +970,10 @@ public class SMAPHFeatures {
             double link_prob = WATRelatednessComputer.getLp(mention);
             setL.add(link_prob);
         }
+
+        // Cache the set and remember the parameters
+        L = setL;
+        oldQuery_L = query;
 
         return setL;
     }
@@ -789,26 +1000,50 @@ public class SMAPHFeatures {
         return boldWords;
     }
 
+    // Verified
     private static boolean isOverlap(String s1, String s2) {
-        List<String> s2Arr = Arrays.asList(s2.split(" "));
+        String s3 = s1;
+
+        // Put the longer string into s1.
+        s1 = s1.length() > s2.length() ? s1 : s2;
+        s2 = s1.equals(s2) ? s3 : s2;
+
+
+        List<String> s2Arr = Arrays.asList(s2.toLowerCase().split(" "));
+        s1 = s1.toLowerCase();
 
         for (int i = 0; i < s2Arr.size(); i++) {
-            String subWord = StringUtils.join(s2Arr.subList(0,i)," ");
-            if (s1.contains(subWord))
-                return true;
+
+            String subWord = StringUtils.join(s2Arr.subList(0,i+1)," ");
+
+            if (i+1 == 1) {
+                if (s1.equals(subWord))
+                    return true;
+            }
+            else {
+                if (s1.contains(subWord))
+                    return true;
+            }
         }
 
         for (int i = 0; i < s2Arr.size(); i++) {
-            String subWord = StringUtils.join(s2Arr.subList(i, s2Arr.size()-1)," ");
-            if (s1.contains(subWord))
-                return true;
+            String subWord = StringUtils.join(s2Arr.subList(i, s2Arr.size())," ");
+
+            if (s2Arr.size() - i == 1) {
+                if (s1.equals(subWord))
+                    return true;
+            }
+            else {
+                if (s1.contains(subWord))
+                    return true;
+            }
         }
 
         return false;
     }
 
     // testPrivateFunctions tests all the private functions of this class. Useful to check for bugs
-    public static void testPrivateFunctions() {
+    private static void testPrivateFunctions() {
         String word1 = "hellp";
         String word2 = "hello";
         String word3 = "how";
@@ -850,8 +1085,80 @@ public class SMAPHFeatures {
         System.out.println();
 
     }
+
+
+    private static void testPrivateFunctionsE3() throws Exception {
+ /*       String s1 = "Look at that motherfucker in his red car";
+        String s2 = "his red car for pussies";
+        String s3 = "that motherfucker";
+        String s4 = "Hey look at that";
+        String s5 = "Completely irrelevant string";
+        System.out.println(isOverlap(s1, s2));
+        System.out.println(isOverlap(s1, s3));
+        System.out.println(isOverlap(s1, s4));
+        System.out.println(isOverlap(s1, s5));
+
+        System.out.println(isOverlap(s2, s1));
+        System.out.println(isOverlap(s3, s1));
+        System.out.println(isOverlap(s4, s1));
+        System.out.println(isOverlap(s5, s1));
+
+        System.out.println(isOverlap(s1, s1));*/
+
+        /*BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");*/
+        WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
+        JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
+        JSONObject q2 = BingSearchMain.getQueryResults("Kitten wikipedia");
+        System.out.println(q.toString(4));
+        String e = "Cat";
+        String e2 = "Kitten";
+
+        long startTime;
+        List<String> descs = getDescriptions(q);
+        String currD = descs.get(0);
+
+        startTime = System.currentTimeMillis();
+        List<EntityMentionPair> A = getSetA(currD);
+        List<Pair<String, String>> X = getSetX(q);
+        List<Double> P = getSetP(q, e);
+        List<Integer> AL = getSetLatinA(q, e);
+        List<Double> C = getSetC(wikiApi, q, e);
+        List<Double> L = getSetL(q);
+        double noCache = (System.currentTimeMillis() - startTime) / 1000.0;
+
+
+        startTime = System.currentTimeMillis();
+        List<EntityMentionPair> A2 = getSetA(currD);
+        List<Pair<String, String>> X2 = getSetX(q);
+        List<Double> P2 = getSetP(q, e);
+        List<Integer> AL2 = getSetLatinA(q, e);
+        List<Double> C2 = getSetC(wikiApi, q, e);
+        List<Double> L2 = getSetL(q);
+        double withCache = (System.currentTimeMillis() - startTime) / 1000.0;
+
+        String currD2 = getDescriptions(q2).get(0);
+        startTime = System.currentTimeMillis();
+        List<EntityMentionPair> A3 = getSetA(currD2);
+        List<Pair<String, String>> X3 = getSetX(q2);
+        List<Double> P3 = getSetP(q, e2);
+        List<Integer> AL3 = getSetLatinA(q, e2);
+        List<Double> C3 = getSetC(wikiApi, q, e2);
+        List<Double> L3 = getSetL(q);
+        double noCache2 = (System.currentTimeMillis() - startTime) / 1000.0;
+
+        System.out.println("No caching: " + noCache + " s");
+        System.out.println("With caching: " + withCache + " s");
+        System.out.println("No cache, new query: " + noCache2 + " s");
+        System.out.println("Break here");
+
+    }
+
     public static void main(String[] args) {
-    	testPrivateFunctions();
+        try {
+            testPrivateFunctionsE3();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -11,13 +11,21 @@ import it.unipi.di.acube.batframework.utils.ProblemReduction;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * Created by dejan on 5/17/16.
+ */
 public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
-	private static float threshold = -1f;
+	private static float threshold = 0f;
 	private static final int MAX_LINKS = 5;
-
+	private static final String feature_path = "data/svm/features/";
+	private int nofp, nofn;
 	private static HashMap<String, List<Integer>> queryIdMap;
 
 	private WikipediaApiInterface wikiApi;
@@ -77,17 +85,27 @@ public class SVMAnnotator implements Sa2WSystem {
 		if (classifier.model != null)
 			return;
 
-		List<HashSet<Tag>> computedTags = new Vector<HashSet<Tag>>();
-		int nr = 0;
+		nofp = 0; nofn = 0;
 		for (String query: queryIdMap.keySet()){
 			Map<String,List<Double>> entity_features = null;
 			try {
 				entity_features = CandidateGenerator.get_entity_candidates(query);
 				for (String cand : entity_features.keySet()) {
-					if (queryIdMap.get(query).contains(wikiApi.getIdByTitle(cand)))
-						classifier.addPositiveExample(ModelConverter.serializeToString(entity_features.get(cand)));
-					else
-						classifier.addNegativeExample(ModelConverter.serializeToString(entity_features.get(cand)));
+					if (cand.isEmpty())
+						continue;
+					if (addCachedFeatures(entity_features, cand))
+						continue;
+					String feature = ModelConverter.serializeToString(entity_features.get(cand));
+					if (queryIdMap.get(query).contains(wikiApi.getIdByTitle(cand))) {
+						classifier.addPositiveExample(feature);
+						safeFeature("+1", query, cand, feature);
+						nofp++;
+					}
+					else {
+						classifier.addNegativeExample(feature);
+						safeFeature("-1", query, cand, feature);
+						nofn++;
+					}
 				}
 
 			} catch (Exception e) {
@@ -96,6 +114,7 @@ public class SVMAnnotator implements Sa2WSystem {
 			//nr++;
 			//if (nr > MAX_LINKS) break;
 		}
+		classifier.weight = nofn/(double)nofp;
 
 		try {
 			classifier.run(new String[]{});
@@ -105,77 +124,69 @@ public class SVMAnnotator implements Sa2WSystem {
 
 	}
 
+	private boolean addCachedFeatures(Map<String,List<Double>> entity_features, String cand) {
+		boolean found = false;
+		String cand_file_name = feature_path + cand.replace("/", "_") + ".txt";
+		File f = new File(cand_file_name);
+		if (f.exists()) {
+			found = true;
+			System.out.println("Read features from cache: " + cand_file_name);
+			try {
+				String feature = Files.readAllLines(f.toPath()).get(0);
+				if (feature.substring(0,2).equals("+1")) {
+					classifier.addPositiveExample(feature.substring(3));
+					nofp++;
+				} else if (feature.substring(0,2).equals("-1")) {
+					classifier.addNegativeExample(feature.substring(3));
+					nofn++;
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return found;
+	}
+
+	private void safeFeature(String label, String query, String cand, String feature) {
+		String cand_file_name = feature_path + query + ":" + cand.replace("/", "_") + ".txt";
+		File f = new File(cand_file_name);
+		BufferedWriter writer = null;
+		try {
+			writer = new BufferedWriter(new FileWriter(f));
+			writer.write(label + " " + feature);
+			//Close writer
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
 
-
+		lastTime = System.currentTimeMillis();
 		HashSet<ScoredAnnotation> res = new HashSet<>();
 		try {
 			Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates(text);
+			List<String> lines = new ArrayList<>();
 			for (String cand : entity_features.keySet()) {
 				String features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
 				BufferedReader input = new BufferedReader(new StringReader(features));
 				double pred = classifier.predict(input, 1);
-				res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), (float) pred));
+				if (pred > threshold)
+					res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), (float) pred));
 				System.out.println("Candidate " + cand + "\t score: " + pred);
-
+				lines.add("Candidate " + cand + "\t score: " + pred);
 			}
+
+			Path file = Paths.get("data/svm/prediction.txt");
+			Files.write(file, lines, Charset.forName("UTF-8"));
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		return res;
-		/*
-		lastTime = System.currentTimeMillis();
-		BingSearchMain bing;
-		String text_clean = null;
-		String[] words = text.split(" ");
-		String[] correct_words = new  String[words.length];
-		/* 
-		 * Fix spelling mistakes using the BING search API
-		 */
-		/*
-		for (Integer idx=0;idx<words.length;idx++) {
-			try {
-				//bing = new BingSearchMain(words[idx]);
-				//correct_words[idx]=bing.corrected_query;
-			} catch (Exception e) {
-				correct_words[idx]=words[idx];
-			}		
-		}
-		int n = words.length;
-		System.err.println("Find entities for query " + text);
-		
-		// Iterate through all possible mentions and check if it exists in the training set.
-		// Start with the longest.
-		HashSet<ScoredAnnotation> result = new HashSet<>();
-		List<Interval> used_intervals = new ArrayList<>();
-
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j <= i; j++) {
-				int left_index = j;
-				int right_index = n - i + j - 1;
-
-				if (SVMAnnotator.isForbiddenInterval(used_intervals, left_index, right_index))
-					continue;
-
-				
-				String extract = SVMAnnotator.concatenateStrings(words, left_index, right_index);
-				String clean_extract = SVMAnnotator.concatenateStrings(correct_words, left_index, right_index);
-				int id = checkMention(clean_extract);
-				
-				if (id != -1) {
-					result.add(new ScoredAnnotation(text.indexOf(extract), extract.length(), id, 0.1f));
-					used_intervals.add(new Interval(left_index, right_index));
-				}
-
-
-			}
-		}
-
 		lastTime = System.currentTimeMillis() - lastTime;
-		return result;
-		*/
+		return res;
     }
 
 	public void setTrainingData(A2WDataset... data) {
@@ -254,7 +265,7 @@ public class SVMAnnotator implements Sa2WSystem {
 	}
 	
 	public String getName() {
-		return "Simple yet uneffective query annotator";
+		return "Annotator that scores entity candidates with SVM";
 	}
 
 	public static boolean isForbiddenInterval(List<Interval> intervals, int left_index, int right_index) {

@@ -1,9 +1,12 @@
 package annotatorstub.annotator;
+import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.util.*;
 
+import annotatorstub.classification.ModelConverter;
 import annotatorstub.main.BingSearchMain;
 import org.codehaus.jettison.json.JSONObject;
 import annotatorstub.utils.SMAPHFeatures;
@@ -20,9 +23,10 @@ public class CandidateGenerator {
 		get_entity_candidates("los angeles oversized towing");
 	}
 	
-	public static boolean use_invididual_words = false;
+	public static boolean use_invididual_words = true;
 	public static boolean use_tagme = true;	
 	public static int num_invididual_words = 5;
+	private static final String feature_path = "data/svm/features/";
 	public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
 	
 	
@@ -30,6 +34,7 @@ public class CandidateGenerator {
 		/**
 		 *  Compute (entity,features) pairs given a string
 		 */
+
 		Map<String,List<Double>> entity_features = get_entites_and_features(query);
 		Map<String,List<Double>> entity_features_wiki = get_entites_and_features(query+ " wikipedia");
 		for (String key : entity_features_wiki.keySet()) {
@@ -71,39 +76,63 @@ public class CandidateGenerator {
 	}
 	public static Map<String,List<Double>> get_entites_and_features(String query,int max_results) throws Exception {
 		Map<String,List<Double>> entity_features = new HashMap<String,List<Double>>(); 
-		JSONObject data = BingSearchMain.getQueryResults(query);
+		JSONObject queryData = BingSearchMain.getQueryResults(query);
 
 		String url;
 		
-		for (Integer idx =0;idx<data.getJSONArray("Web").length() && idx<max_results;idx++) {
+		for (Integer idx =0;idx<queryData.getJSONArray("Web").length() && idx<max_results;idx++) {
 			String entity = null;
-			JSONObject res = data.getJSONArray("Web").getJSONObject(idx);
+			JSONObject res = queryData.getJSONArray("Web").getJSONObject(idx);
 			url=res.getString("Url");
 			entity = get_entity(url);
 			
 			if (entity != null) { // We have found an entity
+
+				// Skip if cached features
+				String cand_file_name = feature_path + entity.replace("/", "_") + ".txt";
+				File f = new File(cand_file_name);
 				List<Double> features = new ArrayList<Double>();
-				
-				// Compute global features
-				features.add(new Double(SMAPHFeatures.webTotal(data)));
-				//features.add(new Double(SMAPHFeatures.isNE(res)));
-				
-				// Compute entity specific features
-				//features.add(new Double(SMAPHFeatures.rank(data,entity)));
-				// Use the rank we have instead
-				features.add(new Double(idx));
-				
-				features.add(new Double(SMAPHFeatures.EDTitle(wiki,data,entity)));
-				features.add(new Double(SMAPHFeatures.EDTitNP(wiki,data,entity)));
-				features.add(new Double(SMAPHFeatures.captBolds(data)));
-				features.add(new Double(SMAPHFeatures.boldTerms(data)));
-				
+				if (!f.exists()) {
+
+					// Compute global features
+					features.add(new Double(SMAPHFeatures.webTotal(queryData)));
+					//features.add(new Double(SMAPHFeatures.isNE(res)));
+
+					// Compute entity specific features
+					features.add(new Double(SMAPHFeatures.rank(queryData, entity)));
+					// Use the rank we have instead
+					//features.add(new Double(idx));
+
+					features.add(new Double(SMAPHFeatures.EDTitle(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.EDTitNP(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.captBolds(queryData)));
+					features.add(new Double(SMAPHFeatures.boldTerms(queryData)));
+
+					// New features
+					features.add(new Double(SMAPHFeatures.freq(queryData, entity)));
+					features.add(new Double(SMAPHFeatures.avgRank(queryData, entity)));
+					features.add(new Double(SMAPHFeatures.rhoMin(queryData, entity)));
+					features.add(new Double(SMAPHFeatures.rhoMax(queryData, entity)));
+					features.add(new Double(SMAPHFeatures.rhoAvg(queryData, entity)));
+					features.add(new Double(SMAPHFeatures.ambigMin(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.ambigMax(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.ambigAvg(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.commMin(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.commMax(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.commAvg(wiki, queryData, entity)));
+					features.add(new Double(SMAPHFeatures.lpMin(queryData)));
+					features.add(new Double(SMAPHFeatures.lpMax(queryData)));
+					features.add(new Double(SMAPHFeatures.mentMEDMin(queryData)));
+					features.add(new Double(SMAPHFeatures.mentMEDMax(queryData)));
+				}
+				// Add features
 				entity_features.put(entity, features);
 				
 			}
 		}
 		return entity_features;	
 	}
+
 	static WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 	private static String get_entity(String url) throws IOException {
 		/**
@@ -132,6 +161,7 @@ public class CandidateGenerator {
 		if (found_id == -1){
 			return null;
 		} else {
+			entity = entity.replaceAll("_", " ");
 			return entity;
 		}
 		

@@ -24,6 +24,7 @@ import annotatorstub.utils.SMAPHFeatures;
 
 public class BingSearchMain {
 	//public static BingInterface bing = new BingInterface("XsdC/uY+ssHhsatEvIC2xQiUD1gs4GGazQZI0wWO2bY");
+	//public static BingInterface bing = new BingInterface("PvfkhZ3T8xG5bvqWYJlmsscNcnrav3xIyQvxYuGHcns");
 	//public static BingInterface bing = new BingInterface("jRstdZaO2NyTyCDBnXkl2PAXeXSGksYjM1T20XXuxa8");
 	public static BingInterface bing = new BingInterface("Zp18VyUZCbZVwR50JdlimwbkWsPHX+q+afXCfSW+ejU");
 	
@@ -32,11 +33,11 @@ public class BingSearchMain {
 	public static JSONObject getQueryResults(String query) throws Exception {
 		//String corrected_query;
 		//List<WebResult> results = new ArrayList<WebResult>();
-		String entity_file="data/" + query + ".txt";
+		String entity_file="data/" + query.replace("/", "_") + ".txt";
 		File f = new File(entity_file);
 		JSONObject a;
 		if (f.exists()) {
-			//System.out.println("Read data from "  + entity_file);
+			System.out.println("Read data from "  + entity_file);
 			String content = new String(Files.readAllBytes(Paths.get(entity_file)));
 			a = new JSONObject(content);
 		} else {	
@@ -71,7 +72,7 @@ public class BingSearchMain {
 		// query/response format
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
 		JSONObject q = BingSearchMain.getQueryResults("funy kittens wikipedia");
-		//System.out.println(q.toString(4));
+		System.out.println(q.toString(4));
 		String e = "Cat";
 
 		// Test the private functions.
