@@ -37,7 +37,7 @@ public class BenchmarkMain {
 		
 		// SVM annotator
 		//SVMAnnotator ann = new SVMAnnotator(wikiApi);
-		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
+		//ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB());
 		
 		
 		List<HashSet<Tag>> resTag = BenchmarkCache.doC2WTags(ann, ds);

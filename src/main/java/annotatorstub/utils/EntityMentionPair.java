@@ -82,7 +82,13 @@ public class EntityMentionPair implements Comparable<EntityMentionPair> {
 
 		
 		//descending order
-		return (compare_rho > this.rho) ? 1: 0;
+		if (compare_rho==this.getRho()) {
+			return 0;
+		} else if (compare_rho > this.getRho()) {
+			return 1;
+		} else {
+			return -1;
+		}
 		
 	}	
 

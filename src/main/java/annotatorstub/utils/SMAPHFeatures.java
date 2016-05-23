@@ -12,7 +12,9 @@ import org.bytedeco.javacv.CanvasFrame;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 
+import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,6 +113,14 @@ public class SMAPHFeatures {
         return edTitNP;
     }
 
+    public static double word2vec_sim(WordVectors vec, String mention, String entity) {
+    	try {
+    		return vec.similarity(mention.replace(" ", "_"), entity);
+    	} catch (Exception e1) {
+    		e1.printStackTrace();
+    		return 0;
+    	}
+    }
 
     public static double minEDBolds(JSONObject q) {
         List<ArrayList<String>> boldWords = getBoldWords(q);
@@ -738,6 +748,8 @@ public class SMAPHFeatures {
 
         return setC;
     }
+    
+
 
     // TODO: Verify
     private static List<Double> getSetL(JSONObject q, String e) {
@@ -781,13 +793,13 @@ public class SMAPHFeatures {
         List<String> s2Arr = Arrays.asList(s2.split(" "));
 
         for (int i = 0; i < s2Arr.size(); i++) {
-            String subWord = String.join(" ", s2Arr.subList(0,i));
+            String subWord = StringUtils.join(s2Arr.subList(0,i)," ");
             if (s1.contains(subWord))
                 return true;
         }
 
         for (int i = 0; i < s2Arr.size(); i++) {
-            String subWord = String.join(" ", s2Arr.subList(i, s2Arr.size()-1));
+            String subWord = StringUtils.join(s2Arr.subList(i, s2Arr.size()-1)," ");
             if (s1.contains(subWord))
                 return true;
         }
