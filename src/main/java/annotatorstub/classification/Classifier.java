@@ -137,11 +137,8 @@ public class Classifier {
         {
             do_cross_validation();
         }
-        else
-        {
-            model = svm.svm_train(prob,param);
-            svm.svm_save_model(model_file_name,model);
-        }
+        model = svm.svm_train(prob,param);
+        svm.svm_save_model(model_file_name,model);
     }
 
     public double predict(BufferedReader input, /*DataOutputStream output, */int predict_probability) throws IOException
