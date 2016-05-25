@@ -45,7 +45,7 @@ public class BingSearchMain {
 				fr.write(a.toString());
 				fr.close();
 			} catch (Exception e) {
-				
+				e.printStackTrace();
 			}
 		}
 		JSONObject data = a.getJSONObject("d").getJSONArray("results").getJSONObject(0);

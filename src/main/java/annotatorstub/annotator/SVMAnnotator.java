@@ -26,6 +26,7 @@ public class SVMAnnotator implements Sa2WSystem {
 	private static final int MAX_LINKS = 5;
 	private static final String feature_path = "data/svm/features/";
 	private int nofp, nofn;
+	private static HashMap<String, List<Integer>> testingQueryIdMap;
 	private static HashMap<String, List<Integer>> queryIdMap;
 
 	private WikipediaApiInterface wikiApi;
@@ -205,6 +206,8 @@ public class SVMAnnotator implements Sa2WSystem {
 
 		lastTime = System.currentTimeMillis();
 		HashSet<ScoredAnnotation> res = new HashSet<>();
+		if (testingQueryIdMap.get(text) == null)
+			return res;
 		try {
 			Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates(text);
 			List<String> lines = new ArrayList<>();
@@ -212,11 +215,19 @@ public class SVMAnnotator implements Sa2WSystem {
 				if (cand.isEmpty())
 					continue;
 				String features = readCachedFeatures(text, cand);
+				BufferedReader input;
 				if (features.isEmpty()) {
-					features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
-					safeFeature("", text, cand, features);
-				}
-				BufferedReader input = new BufferedReader(new StringReader(features));
+					String label;
+					if (testingQueryIdMap.get(text).contains(wikiApi.getIdByTitle(cand)))
+						label = "+1";
+					else
+						label = "-1";
+
+					features = ModelConverter.serializeToString(entity_features.get(cand));
+					safeFeature(label, text, cand, features);
+					input = new BufferedReader(new StringReader(label + " " + features));
+				} else
+					input = new BufferedReader(new StringReader(features));
 				double pred = classifier.predict(input, 1);
 				if (pred > threshold)
 					res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), (float) pred));
@@ -241,6 +252,13 @@ public class SVMAnnotator implements Sa2WSystem {
 		}
 
 		trainClassifier();
+	}
+
+	public void setTestingData(A2WDataset... data) {
+		testingQueryIdMap = new HashMap<>();
+		for (A2WDataset dataset : data) {
+			testingQueryIdMap.putAll(convertDatasetToMap(dataset));
+		}
 	}
 
 	public HashMap<String, List<Integer>> convertDatasetToMap (A2WDataset dataSet) {
