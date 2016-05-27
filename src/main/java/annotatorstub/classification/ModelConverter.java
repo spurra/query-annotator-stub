@@ -40,13 +40,9 @@ public class ModelConverter implements Serializable {
         for (int i = 0; i < temp.length; i++) {
             String[] feature = temp[i].split(":");
             features.add(new Double(feature[1]));
+
         }
         return features;
-    }
-
-    void serializeToFile() {
-
-        return;
     }
 
 }

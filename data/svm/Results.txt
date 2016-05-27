@@ -5,16 +5,32 @@ ID			Parameters			SVM Parameters 			Training Set		Testing Set			Result
 			tagme,
 			nof ind. words,
 			spelling corr,
-			score threshold
+			score threshold/Prob
 
 01			f,t,5,t,0									A,B,Devel			Devel				C2W	mac-P/R/F1: 0.934/0.728/0.738 mic-P/R/F1: 0.920/0.683/0.784 TP/FP/FN: 286/25/133 std-P/R/F1: 0.221/0.376/0.367
-02			t,t,5,t,0									A,B,Devel			Devel				C2W	mac-P/R/F1: 0.913/0.800/0.787 mic-P/R/F1: 0.884/0.780/0.829 TP/FP/FN: 327/43/92 std-P/R/F1: 0.234/0.343/0.341
+02			t,t,5,t,0									A,B,Devel			Devel			#	C2W	mac-P/R/F1: 0.913/0.800/0.787 mic-P/R/F1: 0.884/0.780/0.829 TP/FP/FN: 327/43/92 std-P/R/F1: 0.234/0.343/0.341
 04			t,t,5,t,0									A,B					Devel				C2W	mac-P/R/F1: 1.000/0.112/0.112 mic-P/R/F1: 1.000/0.000/0.000 TP/FP/FN: 0/0/419 std-P/R/F1: 0.000/0.317/0.317
 05			t,t,5,t,0									A,B,Devel			Test 				C2W	mac-P/R/F1: 0.870/0.176/0.184 mic-P/R/F1: 0.500/0.090/0.153 TP/FP/FN: 37/37/372 std-P/R/F1: 0.328/0.342/0.346
 
-06			t,t,5,t,			cv
-07			f,t, ,t,			cv
-08			f,f, ,t,			cv
+06			t,t,5,t,no			32768,0.0625,unweighted	A,B,Devel			Test 				C2W	mac-P/R/F1: 0.646/0.316/0.328 mic-P/R/F1: 0.396/0.252/0.308 TP/FP/FN: 103/157/306 std-P/R/F1: 0.445/0.394/0.393
+07			t,t,5,t,no			32768,0.0625,weighted	A,B,Devel			Test 				C2W	mac-P/R/F1: 0.473/0.428/0.381 mic-P/R/F1: 0.304/0.374/0.335 TP/FP/FN: 153/351/256 std-P/R/F1: 0.414/0.411/0.373
+08			t,t,5,t,no			1024,0.0625,unweighted	A,B,Devel			Test 				C2W	mac-P/R/F1: 0.733/0.293/0.313 mic-P/R/F1: 0.467/0.227/0.306 TP/FP/FN: 93/106/316 std-P/R/F1: 0.410/0.386/0.397
+09			t,t,5,t,no			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.489/0.482/0.406 mic-P/R/F1: 0.314/0.428/0.362 TP/FP/FN: 175/382/234 std-P/R/F1: 0.398/0.423/0.372
+
+10			t,t,5,t,0			32768,0.0625,unweighted	A,B,Devel			Test 				
+11			t,t,5,t,0			32768,0.0625,weighted	A,B,Devel			Test 				
+12			t,t,5,t,0			1024,0.0625,unweighted	A,B,Devel			Test 				
+13			t,t,5,t,0			1024,0.0625,weighted	A,B,Devel			Test 				
+
+14			f,t, ,t,no			32768,0.0625,unweighted	A,B,Devel			Test 				
+15			f,f, ,t,no			32768,0.0625,weighted	A,B,Devel			Test 				C2W	mac-P/R/F1: 0.560/0.437/0.418 mic-P/R/F1: 0.394/0.381/0.388 TP/FP/FN: 156/240/253 std-P/R/F1: 0.428/0.419/0.397
+16			f,t, ,t,no			1024,0.0625,unweighted	A,B,Devel			Test 				
+17			f,f, ,t,no			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.566/0.468/0.439 mic-P/R/F1: 0.413/0.421/0.417 TP/FP/FN: 172/244/237 std-P/R/F1: 0.417/0.424/0.392
+
+18			f,t, ,t,			32768,0.0625,unweighted	A,B,Devel			Test 				
+19			f,f, ,t,			32768,0.0625,weighted	A,B,Devel			Test 				
+20			f,t, ,t,			1024,0.0625,unweighted	A,B,Devel			Test 				
+21			f,f, ,t,-.5			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.531/0.517/0.464 mic-P/R/F1: 0.388/0.474/0.427 TP/FP/FN: 194/306/215 std-P/R/F1: 0.403/0.417/0.379
 
 
 ====================================================================================================================================================================================================================
@@ -23,8 +39,8 @@ ID			Parameters			SVM Parameters 			Training Set		Testing Set			Result
 Cross validation
 
 ID 		Description												Results
-01		Old features (with rank), normalized, cv: 				best c=1024.0, g=0.0625, rate=35.5482
-02		New features (without rank), normalized, cv: 			best c=32768.0, g=0.0625, rate=34.8517
+01		without individual words, normalized, cv: 				best c=1024.0, g=0.0625, rate=35.5482
+02		with individual words, normalized, cv: 					best c=32768.0, g=0.0625, rate=34.8517
 
 
 Usage:

@@ -23,10 +23,11 @@ import java.util.*;
  */
 public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
-	private static float threshold = 0f;
-	public static final int PREDICTION_PROBABILITY = 0;
+	private static float threshold = -0.5f;
+	public static final int PREDICTION_PROBABILITY = 1;
 	public static final int C = 1024;
 	public static final double GAMMA = 0.0625;
+	public static final boolean WEIGHTED = true;
 	public static final String feature_path = "data/svm/features/";
 	public static final String train_dataset_path = "data/svm/train_dataset.txt";
 	public static final String train_dataset_scaled_path = "data/svm/train_dataset_scaled.txt";
@@ -40,7 +41,7 @@ public class SVMAnnotator implements Sa2WSystem {
 	private Classifier classifier;
 
 	public SVMAnnotator(WikipediaApiInterface wikiApi) {
-		this.classifier = new Classifier(train_dataset_scaled_path);
+		this.classifier = new Classifier();
 		this.wikiApi = wikiApi;
 
 	}
@@ -77,8 +78,8 @@ public class SVMAnnotator implements Sa2WSystem {
 
 		if (classifier.model != null)
 			return;
-		File f = new File(classifier.model_file_name);
-		if (f.exists()) {
+		File f = new File(SVMAnnotator.train_dataset_scaled_path);
+		if (f.exists() && !SVMAnnotator.WEIGHTED) {
 			try {
 				classifier.run();
 			} catch (IOException e) {
@@ -218,11 +219,12 @@ public class SVMAnnotator implements Sa2WSystem {
 			return res;
 		try {
 			Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates(text);
-			List<String> lines = new ArrayList<>();
 			for (String cand : entity_features.keySet()) {
 				if (cand.isEmpty())
 					continue;
 				String features = readCachedFeatures(text, cand);
+				if (features.isEmpty())
+					continue;
 				features = normalizeFeatures(features);
 				BufferedReader input;
 				if (features.isEmpty()) {
@@ -242,11 +244,8 @@ public class SVMAnnotator implements Sa2WSystem {
 				if (pred > threshold)
 					res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), (float) pred));
 				System.out.println("Candidate " + cand + "\t score: " + pred);
-				lines.add("Candidate " + cand + "\t score: " + pred);
 			}
 
-			Path file = Paths.get("data/svm/prediction.txt");
-			Files.write(file, lines, Charset.forName("UTF-8"));
 
 		} catch (Exception e) {
 			e.printStackTrace();
