@@ -87,7 +87,7 @@ public class CandidateGenerator {
 			url=res.getString("Url");
 			entity = get_entity(url);
 			
-			if (entity != null) { // We have found an entity
+			if (entity != null && !entity.isEmpty() && !entity.equals("m")) { // We have found an entity
 
 				// Skip if cached features
 				String cand_file_name = feature_path + origQuery.replace("/", "_") + ":" + entity.replace("/", "_") + ".txt";
@@ -102,7 +102,7 @@ public class CandidateGenerator {
 					//features.add(new Double(SMAPHFeatures.isNE(res)));
 
 					// Compute entity specific features
-					features.add(new Double(SMAPHFeatures.rank(queryData, entity)));
+					//features.add(new Double(SMAPHFeatures.rank(queryData, entity)));
 					// Use the rank we have instead
 					//features.add(new Double(idx));
 
@@ -133,7 +133,7 @@ public class CandidateGenerator {
 				
 			}
 		}
-		return entity_features;	
+		return entity_features;
 	}
 
 	static WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
@@ -146,7 +146,12 @@ public class CandidateGenerator {
 		 */
 		String entity=null;
 		int found_id = -1;
-		url=URLDecoder.decode(url, "UTF-8");
+		try {
+			url = URLDecoder.decode(url.replace("%", ""), "UTF-8");
+		} catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 		url=url.replace("https://", "").replace("http://", "");
 		if (url.contains("wikipedia.org/wiki/")) {
 			entity = url.replace("wikipedia.org/wiki/", "");

@@ -9,6 +9,23 @@ ID			Parameters			SVM Parameters 			Training Set		Testing Set			Result
 
 01			f,t,5,t,0									A,B,Devel			Devel				C2W	mac-P/R/F1: 0.934/0.728/0.738 mic-P/R/F1: 0.920/0.683/0.784 TP/FP/FN: 286/25/133 std-P/R/F1: 0.221/0.376/0.367
 02			t,t,5,t,0									A,B,Devel			Devel				C2W	mac-P/R/F1: 0.913/0.800/0.787 mic-P/R/F1: 0.884/0.780/0.829 TP/FP/FN: 327/43/92 std-P/R/F1: 0.234/0.343/0.341
-03			t,t,5,t,0			cv						A,B,Devel			Devel				
 04			t,t,5,t,0									A,B					Devel				C2W	mac-P/R/F1: 1.000/0.112/0.112 mic-P/R/F1: 1.000/0.000/0.000 TP/FP/FN: 0/0/419 std-P/R/F1: 0.000/0.317/0.317
 05			t,t,5,t,0									A,B,Devel			Test 				C2W	mac-P/R/F1: 0.870/0.176/0.184 mic-P/R/F1: 0.500/0.090/0.153 TP/FP/FN: 37/37/372 std-P/R/F1: 0.328/0.342/0.346
+
+06			t,t,5,t,			cv
+07			f,t, ,t,			cv
+08			f,f, ,t,			cv
+
+
+====================================================================================================================================================================================================================
+
+
+Cross validation
+
+ID 		Description												Results
+01		Old features (with rank), normalized, cv: 				best c=1024.0, g=0.0625, rate=35.5482
+02		New features (without rank), normalized, cv: 			best c=32768.0, g=0.0625, rate=34.8517
+
+
+Usage:
+python grid.py -log2c 5,15,1 -log2g -9,-3,1 -v 10 -m 1024 ../../data/svm/train_dataset_scaled.txt

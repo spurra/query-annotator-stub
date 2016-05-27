@@ -30,10 +30,14 @@ public class ModelConverter implements Serializable {
     }
 
     public static List<Double> deserializeFromString(String string) {
+        if (string.startsWith("-1") || string.startsWith("+1"))
+            string = string.substring(3);
+        else if (string.startsWith("0 "))
+            string = string.substring(2);
         List<Double> features = new ArrayList<>();
 
         String[] temp = string.split(" ");
-        for (int i = 1; i < temp.length; i++) {
+        for (int i = 0; i < temp.length; i++) {
             String[] feature = temp[i].split(":");
             features.add(new Double(feature[1]));
         }

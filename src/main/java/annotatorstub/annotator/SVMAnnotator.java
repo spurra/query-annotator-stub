@@ -9,6 +9,7 @@ import it.unipi.di.acube.batframework.problems.Sa2WSystem;
 import it.unipi.di.acube.batframework.utils.AnnotationException;
 import it.unipi.di.acube.batframework.utils.ProblemReduction;
 import it.unipi.di.acube.batframework.utils.WikipediaApiInterface;
+import org.deeplearning4j.nn.api.Model;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -23,8 +24,13 @@ import java.util.*;
 public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
 	private static float threshold = 0f;
-	private static final int MAX_LINKS = 5;
-	private static final String feature_path = "data/svm/features/";
+	public static final int PREDICTION_PROBABILITY = 0;
+	public static final int C = 1024;
+	public static final double GAMMA = 0.0625;
+	public static final String feature_path = "data/svm/features/";
+	public static final String train_dataset_path = "data/svm/train_dataset.txt";
+	public static final String train_dataset_scaled_path = "data/svm/train_dataset_scaled.txt";
+	public static final String model_path = "data/svm/model.txt";
 	private int nofp, nofn;
 	private static HashMap<String, List<Integer>> testingQueryIdMap;
 	private static HashMap<String, List<Integer>> queryIdMap;
@@ -34,7 +40,7 @@ public class SVMAnnotator implements Sa2WSystem {
 	private Classifier classifier;
 
 	public SVMAnnotator(WikipediaApiInterface wikiApi) {
-		this.classifier = new Classifier();
+		this.classifier = new Classifier(train_dataset_scaled_path);
 		this.wikiApi = wikiApi;
 
 	}
@@ -59,20 +65,6 @@ public class SVMAnnotator implements Sa2WSystem {
 	    return ProblemReduction.Sa2WToSc2W(solveSa2W(text));
     }
 
-	public static String concatenateStrings(String[] words, int left_index, int right_index) {
-		String result = new String();
-
-		for (int i = left_index; i <= right_index; i++) {
-			result += words[i] + " ";
-		}
-
-		try {
-			result = result.substring(0, result.length() - 1);
-		} catch (StringIndexOutOfBoundsException e) {
-			System.err.println();
-		}
-		return result;
-	}
 	
 	public static void main() {
 		WikipediaApiInterface wikiApi = WikipediaApiInterface.api();
@@ -85,10 +77,19 @@ public class SVMAnnotator implements Sa2WSystem {
 
 		if (classifier.model != null)
 			return;
+		File f = new File(classifier.model_file_name);
+		if (f.exists()) {
+			try {
+				classifier.run();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
 
 		nofp = 0; nofn = 0;
 		for (String query: queryIdMap.keySet()){
-			Map<String,List<Double>> entity_features = null;
+			Map<String,List<Double>> entity_features;
 			try {
 				entity_features = CandidateGenerator.get_entity_candidates(query);
 				for (String cand : entity_features.keySet()) {
@@ -112,13 +113,20 @@ public class SVMAnnotator implements Sa2WSystem {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			//nr++;
-			//if (nr > MAX_LINKS) break;
 		}
 		classifier.weight = nofn/(double)nofp;
+		classifier.saveDataset();
+		// Normalize training data
+		Process p;
+		try {
+			p = Runtime.getRuntime().exec("python data/svm/python/normalizeFeatures.py");
+			p.waitFor();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		try {
-			classifier.run(new String[]{});
+			classifier.run();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -215,6 +223,7 @@ public class SVMAnnotator implements Sa2WSystem {
 				if (cand.isEmpty())
 					continue;
 				String features = readCachedFeatures(text, cand);
+				features = normalizeFeatures(features);
 				BufferedReader input;
 				if (features.isEmpty()) {
 					String label;
@@ -228,7 +237,8 @@ public class SVMAnnotator implements Sa2WSystem {
 					input = new BufferedReader(new StringReader(label + " " + features));
 				} else
 					input = new BufferedReader(new StringReader(features));
-				double pred = classifier.predict(input, 1);
+
+				double pred = classifier.predict(input, PREDICTION_PROBABILITY);
 				if (pred > threshold)
 					res.add(new ScoredAnnotation(0, 0, wikiApi.getIdByTitle(cand), (float) pred));
 				System.out.println("Candidate " + cand + "\t score: " + pred);
@@ -291,66 +301,31 @@ public class SVMAnnotator implements Sa2WSystem {
 		return map;
 	}
 
-	private int checkMention(String mention) {
-//		if (FakeAnnotator.queryIdMap.containsKey(mention)) {
-//			return FakeAnnotator.queryIdMap.get(mention).get(0);
-//		}
-		String sanitizedMention = mention.replaceAll("[^a-zA-Z0-9' ]", "");
-
-		int articleId = -1;
+	private String normalizeFeatures(String feature) {
+		String label = "";
+		if (feature.startsWith("-1") || feature.startsWith("+1"))
+			label = feature.substring(0, 2);
+		else if (feature.startsWith("0 "))
+			label = feature.substring(0, 1);
+		List<Double> features = ModelConverter.deserializeFromString(feature);
+		File f_mean = new File("data/svm/mean.txt");
+		File f_std = new File("data/svm/std.txt");
 		try {
-			int max_commonness_id = Integer.MAX_VALUE;
-			double max_commonness = 0.0d;
-
-			int[] links = WATRelatednessComputer.getLinks(sanitizedMention);
-			int link_count = 0;
-			for (int id : links) {
-				if (link_count >= SVMAnnotator.MAX_LINKS || max_commonness == 1.0d)
-					break;
-
-				String articleTitle = this.wikiApi.getTitlebyId(id);
-				double commonness = WATRelatednessComputer.getCommonness(sanitizedMention, id);
-				System.err.println(articleTitle);
-
-				if (commonness >= max_commonness && id < max_commonness_id) {
-					max_commonness_id = id;
-					max_commonness = commonness;
-				}
-
-				link_count++;
+			String[] means = Files.readAllLines(f_mean.toPath()).get(0).split(" ");
+			String[] stds = Files.readAllLines(f_std.toPath()).get(0).split(" ");
+			for (int i = 0; i < means.length; i++) {
+				Double mean = new Double(means[i]);
+				Double std = new Double(stds[i]);
+				features.set(i, (features.get(i)-mean)/std);
 			}
-
-			return (links.length != 0) ? max_commonness_id : -1;
 		} catch (IOException e) {
 			e.printStackTrace();
-			return -1;
 		}
+		return label + " " + ModelConverter.serializeToString(features);
 	}
 	
 	public String getName() {
 		return "Annotator that scores entity candidates with SVM";
 	}
 
-	public static boolean isForbiddenInterval(List<Interval> intervals, int left_index, int right_index) {
-		for (Interval interval : intervals) {
-			if (interval.isWithin(left_index) || interval.isWithin(right_index))
-				return true;
-		}
-
-		return false;
-	}
-
-	public class Interval {
-		public final int l;
-		public final int r;
-
-		public Interval (int l, int r) {
-			this.l = l;
-			this.r = r;
-		}
-
-		public boolean isWithin (int index) {
-			return this.l <= index && index <= this.r;
-		}
-	}
 }

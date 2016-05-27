@@ -1,6 +1,7 @@
 package annotatorstub.classification;
 
 import annotatorstub.annotator.CandidateGenerator;
+import annotatorstub.annotator.SVMAnnotator;
 import it.unipi.di.acube.batframework.cache.BenchmarkResults;
 import libsvm.*;
 
@@ -12,40 +13,22 @@ public class Classifier {
     private svm_problem prob;		// set by read_problem
     public svm_model model;
     private String input_file_name;		// set by read_parameters
-    private String model_file_name;		// set by read_parameters
+    public String model_file_name;		// set by read_parameters
     private String model_string;
     private String error_msg;
     private int cross_validation;
     private int nr_fold;
     public double weight;
     private static HashMap<String, List<Integer>> mentionIdMap;
-    private static BenchmarkResults resultsCache = new BenchmarkResults();
-
-    private static svm_print_interface svm_print_null = new svm_print_interface()
-    {
-        public void print(String s) {}
-    };
-
-    private static svm_print_interface svm_print_stdout = new svm_print_interface()
-    {
-        public void print(String s)
-        {
-            System.out.print(s);
-        }
-    };
-
-    private static svm_print_interface svm_print_string = svm_print_stdout;
-
-    static void info(String s)
-    {
-        svm_print_string.print(s);
-    }
 
 
 
-    public Classifier() {
+
+
+    public Classifier(String input_file_name) {
         model_string = "";
-        model_file_name = "data/svm/model.txt";
+        model_file_name = SVMAnnotator.model_path;
+        this.input_file_name = input_file_name;
 
         File f = new File(model_file_name);
         if (f.exists()) {
@@ -76,9 +59,9 @@ public class Classifier {
         Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates("Funny cats wikipedia");
         ModelConverter serializer = new ModelConverter(entity_features);
         //String svm_model = serializer.serializeToString(entity_features);
-        Classifier t = new Classifier();
+        Classifier t = new Classifier(SVMAnnotator.train_dataset_scaled_path);
         //t.model_string = svm_model;
-        t.run(argv);
+        t.run();
 
     }
 
@@ -121,7 +104,17 @@ public class Classifier {
         }
     }
 
-    public void run(String argv[]) throws IOException
+    public void saveDataset() {
+        try {
+            PrintWriter out = new PrintWriter(SVMAnnotator.train_dataset_path);
+            out.println(this.model_string);
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void run() throws IOException
     {
         read_parameters();
         read_problem();
@@ -141,13 +134,10 @@ public class Classifier {
         svm.svm_save_model(model_file_name,model);
     }
 
+
     public double predict(BufferedReader input, /*DataOutputStream output, */int predict_probability) throws IOException
     {
         String res = "";
-        int correct = 0;
-        int total = 0;
-        double error = 0;
-        double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
 
         int svm_type=svm.svm_get_svm_type(model);
         int nr_class=svm.svm_get_nr_class(model);
@@ -158,7 +148,7 @@ public class Classifier {
             if(svm_type == svm_parameter.EPSILON_SVR ||
                     svm_type == svm_parameter.NU_SVR)
             {
-                Classifier.info("Prob. model for test data: target value = predicted value + z,\nz: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma="+svm.svm_get_svr_probability(model)+"\n");
+                System.out.println("Prob. model for test data: target value = predicted value + z,\nz: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma="+svm.svm_get_svr_probability(model)+"\n");
             }
             else
             {
@@ -219,30 +209,7 @@ public class Classifier {
                 res += v+"\n";
             }
 
-            if(v == target)
-                ++correct;
-            error += (v-target)*(v-target);
-            sumv += v;
-            sumy += target;
-            sumvv += v*v;
-            sumyy += target*target;
-            sumvy += v*target;
-            ++total;
         }
-        /*
-        if(svm_type == svm_parameter.EPSILON_SVR ||
-                svm_type == svm_parameter.NU_SVR)
-        {
-            Classifier.info("Mean squared error = "+error/total+" (regression)\n");
-            Classifier.info("Squared correlation coefficient = "+
-                    ((total*sumvy-sumv*sumy)*(total*sumvy-sumv*sumy))/
-                            ((total*sumvv-sumv*sumv)*(total*sumyy-sumy*sumy))+
-                    " (regression)\n");
-        }
-        else
-            Classifier.info("Accuracy = "+(double)correct/total*100+
-                    "% ("+correct+"/"+total+") (classification)\n");
-        */
 
         return v;
     }
@@ -281,23 +248,25 @@ public class Classifier {
         param.svm_type = svm_parameter.C_SVC;
         param.kernel_type = svm_parameter.RBF;
         param.degree = 3;
-        param.gamma = 0;	// 1/num_features
+        param.gamma = SVMAnnotator.GAMMA; //0.0625;
         param.coef0 = 0;
         param.nu = 0.5;
         param.cache_size = 100;
-        param.C = 1;
+        param.C = SVMAnnotator.C; //32768;
         param.eps = 1e-3;
         param.p = 0.1;
         param.shrinking = 1;
-        param.probability = 1;
+        param.probability = SVMAnnotator.PREDICTION_PROBABILITY;
+/*
         param.nr_weight = 2;
         param.weight_label = new int[]{-1, 1};
         param.weight = new double[]{1, weight};
-        cross_validation = 1;
+*/
+        cross_validation = 0;
         nr_fold = 10;
 
 
-        svm.svm_set_print_string_function(print_func);
+        //svm.svm_set_print_string_function(print_func);
     }
 
     // read in a problem (in svmlight format)
@@ -305,7 +274,7 @@ public class Classifier {
     private void read_problem() throws IOException
     {
         BufferedReader fp;
-        if (!this.model_string.isEmpty())
+        if (this.model_string != null && !this.model_string.isEmpty())
             fp = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(this.model_string.getBytes())));
         else
             fp = new BufferedReader(new FileReader(input_file_name));
