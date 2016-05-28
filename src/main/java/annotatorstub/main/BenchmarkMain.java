@@ -1,6 +1,7 @@
 package annotatorstub.main;
 
 import annotatorstub.annotator.SVMAnnotator;
+import annotatorstub.annotator.SVMAnnotatorFull;
 import annotatorstub.annotator.TagMeAnnotator;
 import annotatorstub.utils.Utils;
 import it.unipi.di.acube.batframework.cache.BenchmarkCache;
@@ -39,7 +40,8 @@ public class BenchmarkMain {
 		//String result = TagMeAnnotator.sanitizeJson(wrong);
 
 		// SVM annotator
-		SVMAnnotator ann = new SVMAnnotator(wikiApi);
+		//SVMAnnotator ann = new SVMAnnotator(wikiApi);
+		SVMAnnotatorFull ann = new SVMAnnotatorFull(wikiApi);
 		ann.setTrainingData(DatasetBuilder.getGerdaqTrainA(), DatasetBuilder.getGerdaqTrainB(), DatasetBuilder.getGerdaqDevel());
 		ann.setTestingData(ds);
 

@@ -27,7 +27,7 @@ import java.util.*;
 public class SVMAnnotatorFull implements Sa2WSystem {
 
     private static long lastTime = -1;
-    private static float threshold = -1f;
+    private static float threshold = -0.45f;
     private static final int MAX_LINKS = 500;
     public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
     private static WordVectors vec;
@@ -197,7 +197,8 @@ public class SVMAnnotatorFull implements Sa2WSystem {
         for (EntityMentionPair cand_pair : em_candidates) {
             if (SVMAnnotatorFull.isForbiddenInterval(used_intervals, cand_pair.getStartIdx(), cand_pair.getEndIdx()))
                 continue;
-
+            if (cand_pair.getRho() < 0.5f)
+                break;
 
             String extract = FakeAnnotator.concatenateStrings(words, cand_pair.getStartIdx(), cand_pair.getEndIdx());
             int id = checkMention(extract);

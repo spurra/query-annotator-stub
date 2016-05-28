@@ -47,3 +47,9 @@ ID 		Description												Results
 
 Usage:
 python grid.py -log2c 5,15,1 -log2g -9,-3,1 -v 10 -m 1024 ../../data/svm/train_dataset_scaled.txt
+
+
+SVMAnnotatorFull
+
+C2W	mac-P/R/F1: 0.516/0.522/0.471 mic-P/R/F1: 0.400/0.518/0.452 TP/FP/FN: 212/318/197 std-P/R/F1: 0.401/0.425/0.395	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.479/0.474/0.431 mic-P/R/F1: 0.355/0.462/0.402 TP/FP/FN: 189/343/220 std-P/R/F1: 0.405/0.423/0.394	SVMAnnotatorFull
