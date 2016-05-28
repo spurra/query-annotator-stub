@@ -132,7 +132,7 @@ public class SVMAnnotator implements Sa2WSystem {
 		}
 
 	}
-	private String readCachedFeatures(String query, String cand) {
+	public static String readCachedFeatures(String query, String cand) {
 		String features = "";
 		String cand_file_name = feature_path + query.replace("/", "_") + ":" + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
@@ -196,7 +196,7 @@ public class SVMAnnotator implements Sa2WSystem {
 		return found;
 	}
 
-	private void safeFeature(String label, String query, String cand, String feature) {
+	public static void safeFeature(String label, String query, String cand, String feature) {
 		String cand_file_name = feature_path + query.replace("/", "_") + ":" + cand.replace("/", "_") + ".txt";
 		File f = new File(cand_file_name);
 		BufferedWriter writer = null;
@@ -271,7 +271,7 @@ public class SVMAnnotator implements Sa2WSystem {
 		}
 	}
 
-	public HashMap<String, List<Integer>> convertDatasetToMap (A2WDataset dataSet) {
+	public static HashMap<String, List<Integer>> convertDatasetToMap (A2WDataset dataSet) {
 		List<HashSet<Tag>> tags =  dataSet.getC2WGoldStandardList();
 		List<String> queries = dataSet.getTextInstanceList();
 
@@ -301,7 +301,14 @@ public class SVMAnnotator implements Sa2WSystem {
 		return map;
 	}
 
-	private String normalizeFeatures(String feature) {
+	public Classifier setDataAndTrainClassifier(HashMap<String, List<Integer>> dataSet) {
+		queryIdMap = dataSet;
+		trainClassifier();
+
+		return classifier;
+	}
+
+	public static String normalizeFeatures(String feature) {
 		String label = "";
 		if (feature.startsWith("-1") || feature.startsWith("+1"))
 			label = feature.substring(0, 2);

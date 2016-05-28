@@ -32,6 +32,7 @@ public class SVMAnnotatorFull implements Sa2WSystem {
     public static WikipediaApiInterface wiki =  WikipediaApiInterface.api();
     private static WordVectors vec;
     private static HashMap<String, List<Integer>> mentionIdMap;
+    private static HashMap<String, List<Integer>> testingQueryIdMap;
 
     private WikipediaApiInterface wikiApi;
 
@@ -106,6 +107,7 @@ public class SVMAnnotatorFull implements Sa2WSystem {
         return mention_candidates;
     }
     public HashSet<ScoredAnnotation> solveSa2W(String text) throws AnnotationException {
+        HashSet<ScoredAnnotation> result = new HashSet<>();
         if (true && vec == null) {
             System.out.println("Load word2vec model");
             try {
@@ -117,6 +119,8 @@ public class SVMAnnotatorFull implements Sa2WSystem {
         }
         lastTime = System.currentTimeMillis();
         Set<String> entity_candidates = new HashSet<>();
+        if (testingQueryIdMap.get(text) == null)
+            return result;
         try {
             Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates(text);
             List<String> lines = new ArrayList<>();
@@ -124,12 +128,22 @@ public class SVMAnnotatorFull implements Sa2WSystem {
                 if (cand.isEmpty())
                     continue;
                 String features = SVMAnnotator.readCachedFeatures(text, cand);
+                features = SVMAnnotator.normalizeFeatures(features);
+                BufferedReader input;
                 if (features.isEmpty()) {
-                    features = "0 " + ModelConverter.serializeToString(entity_features.get(cand));
-                    SVMAnnotator.safeFeature("", text, cand, features);
-                }
-                BufferedReader input = new BufferedReader(new StringReader(features));
-                double pred = classifier.predict(input, 1);
+                    String label;
+                    if (testingQueryIdMap.get(text).contains(wikiApi.getIdByTitle(cand)))
+                        label = "+1";
+                    else
+                        label = "-1";
+
+                    features = ModelConverter.serializeToString(entity_features.get(cand));
+                    SVMAnnotator.safeFeature(label, text, cand, features);
+                    input = new BufferedReader(new StringReader(label + " " + features));
+                } else
+                    input = new BufferedReader(new StringReader(features));
+
+                double pred = classifier.predict(input, SVMAnnotator.PREDICTION_PROBABILITY);
                 if (pred > threshold)
                     entity_candidates.add(cand);
                 System.out.println("Candidate " + cand + "\t score: " + pred);
@@ -176,7 +190,6 @@ public class SVMAnnotatorFull implements Sa2WSystem {
             }
 
         }
-        HashSet<ScoredAnnotation> result = new HashSet<>();
         List<SVMAnnotatorFull.Interval> used_intervals = new ArrayList<>();
 
         // greedily select mention entity pairs
@@ -210,6 +223,13 @@ public class SVMAnnotatorFull implements Sa2WSystem {
         SVMAnnotator tmp = new SVMAnnotator(wikiApi);
         classifier = tmp.setDataAndTrainClassifier(mentionIdMap);
 
+    }
+
+    public void setTestingData(A2WDataset... data) {
+        testingQueryIdMap = new HashMap<>();
+        for (A2WDataset dataset : data) {
+            testingQueryIdMap.putAll(SVMAnnotator.convertDatasetToMap(dataset));
+        }
     }
 
 
