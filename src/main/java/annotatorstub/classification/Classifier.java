@@ -12,8 +12,6 @@ public class Classifier {
     private svm_parameter param;		// set by read_parameters
     private svm_problem prob;		// set by read_problem
     public svm_model model;
-    private String input_file_name;		// set by read_parameters
-    public String model_file_name;		// set by read_parameters
     private String model_string;
     private String error_msg;
     private int cross_validation;
@@ -25,16 +23,14 @@ public class Classifier {
 
 
 
-    public Classifier(String input_file_name) {
+    public Classifier() {
         model_string = "";
-        model_file_name = SVMAnnotator.model_path;
-        this.input_file_name = input_file_name;
 
-        File f = new File(model_file_name);
+        File f = new File(SVMAnnotator.model_path);
         if (f.exists()) {
-            System.out.println("Read svm model from "  + model_file_name);
+            System.out.println("Read svm model from "  + SVMAnnotator.model_path);
             try {
-                model = svm.svm_load_model(model_file_name);
+                model = svm.svm_load_model(SVMAnnotator.model_path);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -59,7 +55,7 @@ public class Classifier {
         Map<String,List<Double>> entity_features = CandidateGenerator.get_entity_candidates("Funny cats wikipedia");
         ModelConverter serializer = new ModelConverter(entity_features);
         //String svm_model = serializer.serializeToString(entity_features);
-        Classifier t = new Classifier(SVMAnnotator.train_dataset_scaled_path);
+        Classifier t = new Classifier();
         //t.model_string = svm_model;
         t.run();
 
@@ -131,7 +127,7 @@ public class Classifier {
             do_cross_validation();
         }
         model = svm.svm_train(prob,param);
-        svm.svm_save_model(model_file_name,model);
+        svm.svm_save_model(SVMAnnotator.model_path,model);
     }
 
 
@@ -257,11 +253,12 @@ public class Classifier {
         param.p = 0.1;
         param.shrinking = 1;
         param.probability = SVMAnnotator.PREDICTION_PROBABILITY;
-/*
-        param.nr_weight = 2;
-        param.weight_label = new int[]{-1, 1};
-        param.weight = new double[]{1, weight};
-*/
+        if (SVMAnnotator.WEIGHTED) {
+            param.nr_weight = 2;
+            param.weight_label = new int[]{-1, 1};
+            param.weight = new double[]{1, weight};
+        }
+
         cross_validation = 0;
         nr_fold = 10;
 
@@ -274,10 +271,11 @@ public class Classifier {
     private void read_problem() throws IOException
     {
         BufferedReader fp;
-        if (this.model_string != null && !this.model_string.isEmpty())
-            fp = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(this.model_string.getBytes())));
+        File f = new File(SVMAnnotator.train_dataset_scaled_path);
+        if (f.exists())
+            fp = new BufferedReader(new FileReader(SVMAnnotator.train_dataset_scaled_path));
         else
-            fp = new BufferedReader(new FileReader(input_file_name));
+            fp = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(this.model_string.getBytes())));
         Vector<Double> vy = new Vector<Double>();
         Vector<svm_node[]> vx = new Vector<svm_node[]>();
         int max_index = 0;
