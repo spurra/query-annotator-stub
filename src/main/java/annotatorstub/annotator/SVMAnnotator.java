@@ -23,10 +23,10 @@ import java.util.*;
  */
 public class SVMAnnotator implements Sa2WSystem {
 	private static long lastTime = -1;
-	private static float threshold = -0.5f;
+	private static float threshold = -0.45f;
 	public static final int PREDICTION_PROBABILITY = 1;
-	public static final int C = 1024;
-	public static final double GAMMA = 0.0625;
+	public static final int C = 32;
+	public static final double GAMMA = 0.001953125;
 	public static final boolean WEIGHTED = true;
 	public static final String feature_path = "data/svm/features/";
 	public static final String train_dataset_path = "data/svm/train_dataset.txt";

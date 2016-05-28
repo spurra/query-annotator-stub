@@ -23,14 +23,16 @@ ID			Parameters			SVM Parameters 			Training Set		Testing Set			Result
 13			t,t,5,t,0			1024,0.0625,weighted	A,B,Devel			Test 				
 
 14			f,t, ,t,no			32768,0.0625,unweighted	A,B,Devel			Test 				
-15			f,f, ,t,no			32768,0.0625,weighted	A,B,Devel			Test 				C2W	mac-P/R/F1: 0.560/0.437/0.418 mic-P/R/F1: 0.394/0.381/0.388 TP/FP/FN: 156/240/253 std-P/R/F1: 0.428/0.419/0.397
+15			f,t, ,t,no			32768,0.0625,weighted	A,B,Devel			Test 				C2W	mac-P/R/F1: 0.560/0.437/0.418 mic-P/R/F1: 0.394/0.381/0.388 TP/FP/FN: 156/240/253 std-P/R/F1: 0.428/0.419/0.397
 16			f,t, ,t,no			1024,0.0625,unweighted	A,B,Devel			Test 				
-17			f,f, ,t,no			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.566/0.468/0.439 mic-P/R/F1: 0.413/0.421/0.417 TP/FP/FN: 172/244/237 std-P/R/F1: 0.417/0.424/0.392
+17			f,t, ,t,no			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.566/0.468/0.439 mic-P/R/F1: 0.413/0.421/0.417 TP/FP/FN: 172/244/237 std-P/R/F1: 0.417/0.424/0.392
 
 18			f,t, ,t,			32768,0.0625,unweighted	A,B,Devel			Test 				
-19			f,f, ,t,			32768,0.0625,weighted	A,B,Devel			Test 				
+19			f,t, ,t,			32768,0.0625,weighted	A,B,Devel			Test 				
 20			f,t, ,t,			1024,0.0625,unweighted	A,B,Devel			Test 				
-21			f,f, ,t,-.5			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.531/0.517/0.464 mic-P/R/F1: 0.388/0.474/0.427 TP/FP/FN: 194/306/215 std-P/R/F1: 0.403/0.417/0.379
+21			f,t, ,t,-.5			1024,0.0625,weighted	A,B,Devel			Test 			#	C2W	mac-P/R/F1: 0.531/0.517/0.464 mic-P/R/F1: 0.388/0.474/0.427 TP/FP/FN: 194/306/215 std-P/R/F1: 0.403/0.417/0.379
+
+22			f,t, ,t,-0.45		32,0.001953125,weighted A,B,Devel			Test 			# 	C2W	mac-P/R/F1: 0.562/0.592/0.533 mic-P/R/F1: 0.462/0.575/0.512 TP/FP/FN: 235/274/174 std-P/R/F1: 0.384/0.413/0.379
 
 
 ====================================================================================================================================================================================================================
@@ -40,7 +42,7 @@ Cross validation
 
 ID 		Description												Results
 01		without individual words, normalized, cv: 				best c=1024.0, g=0.0625, rate=35.5482
-02		with individual words, normalized, cv: 					best c=32768.0, g=0.0625, rate=34.8517
+02		with individual words, normalized, cv: 					best c=32768.0, g=0.0625, rate=34.8517			best c=2048.0, g=0.03125, rate=35.1716
 
 
 Usage:
