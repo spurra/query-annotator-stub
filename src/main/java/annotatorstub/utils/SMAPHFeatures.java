@@ -438,6 +438,7 @@ public class SMAPHFeatures {
             }
         } catch (Exception e1) {
             e1.printStackTrace();
+            return Double.MIN_VALUE;
         }
 
         avgED = sum2 / sum1;
