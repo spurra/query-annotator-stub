@@ -49,7 +49,79 @@ Usage:
 python grid.py -log2c 5,15,1 -log2g -9,-3,1 -v 10 -m 1024 ../../data/svm/train_dataset_scaled.txt
 
 
-SVMAnnotatorFull
+SVMAnnotatorFull + word2vec (Test Set)
 
+thresholdG = 0
 C2W	mac-P/R/F1: 0.516/0.522/0.471 mic-P/R/F1: 0.400/0.518/0.452 TP/FP/FN: 212/318/197 std-P/R/F1: 0.401/0.425/0.395	SVMAnnotatorFull
 A2W-SAM	mac-P/R/F1: 0.479/0.474/0.431 mic-P/R/F1: 0.355/0.462/0.402 TP/FP/FN: 189/343/220 std-P/R/F1: 0.405/0.423/0.394	SVMAnnotatorFull
+
+thresholdG = 0.4
+C2W	mac-P/R/F1: 0.699/0.405/0.426 mic-P/R/F1: 0.540/0.367/0.437 TP/FP/FN: 150/128/259 std-P/R/F1: 0.417/0.415/0.416	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.664/0.374/0.393 mic-P/R/F1: 0.482/0.328/0.390 TP/FP/FN: 134/144/275 std-P/R/F1: 0.426/0.405/0.407	SVMAnnotatorFull
+
+thresholdG = 0.3
+C2W	mac-P/R/F1: 0.672/0.428/0.443 mic-P/R/F1: 0.528/0.394/0.451 TP/FP/FN: 161/144/248 std-P/R/F1: 0.422/0.419/0.416	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.633/0.394/0.408 mic-P/R/F1: 0.472/0.352/0.403 TP/FP/FN: 144/161/265 std-P/R/F1: 0.431/0.412/0.409	SVMAnnotatorFull
+
+thresholdG = 0.2
+C2W	mac-P/R/F1: 0.635/0.449/0.452 mic-P/R/F1: 0.500/0.418/0.455 TP/FP/FN: 171/171/238 std-P/R/F1: 0.422/0.425/0.414	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.597/0.413/0.417 mic-P/R/F1: 0.447/0.374/0.407 TP/FP/FN: 153/189/256 std-P/R/F1: 0.428/0.417/0.408	SVMAnnotatorFull
+
+thresholdG = 0.1
+C2W	mac-P/R/F1: 0.601/0.468/0.456 mic-P/R/F1: 0.459/0.450/0.454 TP/FP/FN: 184/217/225 std-P/R/F1: 0.418/0.423/0.405	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.568/0.431/0.422 mic-P/R/F1: 0.411/0.403/0.407 TP/FP/FN: 165/236/244 std-P/R/F1: 0.425/0.416/0.402	SVMAnnotatorFull
+
+thresholdG = 0.05
+C2W	mac-P/R/F1: 0.558/0.500/0.466 mic-P/R/F1: 0.425/0.489/0.455 TP/FP/FN: 200/271/209 std-P/R/F1: 0.412/0.425/0.399	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.523/0.455/0.427 mic-P/R/F1: 0.378/0.435/0.405 TP/FP/FN: 178/293/231 std-P/R/F1: 0.418/0.419/0.397	SVMAnnotatorFull
+
+thresholdG = 0.025
+C2W	mac-P/R/F1: 0.529/0.510/0.468 mic-P/R/F1: 0.413/0.504/0.454 TP/FP/FN: 206/293/203 std-P/R/F1: 0.405/0.424/0.397	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.493/0.465/0.429 mic-P/R/F1: 0.367/0.450/0.404 TP/FP/FN: 184/317/225 std-P/R/F1: 0.410/0.420/0.395	SVMAnnotatorFull
+
+thresholdG = 0.01
+C2W	mac-P/R/F1: 0.518/0.514/0.469 mic-P/R/F1: 0.408/0.509/0.453 TP/FP/FN: 208/302/201 std-P/R/F1: 0.405/0.425/0.398	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.483/0.468/0.430 mic-P/R/F1: 0.363/0.455/0.404 TP/FP/FN: 186/326/223 std-P/R/F1: 0.408/0.421/0.396	SVMAnnotatorFull
+
+
+SVMAnnotatorFull + word2vec (Devel Set)
+
+thresholdG = 0.2
+C2W	mac-P/R/F1: 0.644/0.467/0.459 mic-P/R/F1: 0.513/0.425/0.465 TP/FP/FN: 178/169/241 std-P/R/F1: 0.408/0.422/0.403	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.608/0.428/0.424 mic-P/R/F1: 0.455/0.377/0.413 TP/FP/FN: 158/189/261 std-P/R/F1: 0.421/0.416/0.401	SVMAnnotatorFull
+
+
+SVMAnnotatorFull + word2vec (Devel Set) + 5 individual words
+
+thresholdG = 0.2
+C2W	mac-P/R/F1: 0.626/0.416/0.419 mic-P/R/F1: 0.465/0.370/0.412 TP/FP/FN: 155/178/264 std-P/R/F1: 0.434/0.422/0.411	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.599/0.383/0.391 mic-P/R/F1: 0.414/0.329/0.367 TP/FP/FN: 138/195/281 std-P/R/F1: 0.440/0.411/0.405	SVMAnnotatorFull
+
+
+SVMAnnotatorFull + anchorsAvgED scoring (Test Set)
+
+thresholdG = -2
+C2W	mac-P/R/F1: 0.731/0.359/0.374 mic-P/R/F1: 0.488/0.311/0.380 TP/FP/FN: 127/133/282 std-P/R/F1: 0.409/0.401/0.397	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.709/0.336/0.353 mic-P/R/F1: 0.448/0.286/0.349 TP/FP/FN: 117/144/292 std-P/R/F1: 0.421/0.393/0.393	SVMAnnotatorFull
+
+thresholdG = -1
+C2W	mac-P/R/F1: 0.731/0.359/0.374 mic-P/R/F1: 0.488/0.311/0.380 TP/FP/FN: 127/133/282 std-P/R/F1: 0.409/0.401/0.397	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.709/0.336/0.353 mic-P/R/F1: 0.448/0.286/0.349 TP/FP/FN: 117/144/292 std-P/R/F1: 0.421/0.393/0.393	SVMAnnotatorFull
+
+
+
+SVMAnnotatorFull + anchorsAvgED scoring (Devel Set)
+
+thresholdG = -2
+C2W	mac-P/R/F1: 0.773/0.349/0.355 mic-P/R/F1: 0.490/0.282/0.358 TP/FP/FN: 118/123/301 std-P/R/F1: 0.385/0.416/0.410	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.766/0.343/0.349 mic-P/R/F1: 0.471/0.272/0.345 TP/FP/FN: 114/128/305 std-P/R/F1: 0.387/0.412/0.405	SVMAnnotatorFull
+
+thresholdG = -1
+C2W	mac-P/R/F1: 0.773/0.349/0.355 mic-P/R/F1: 0.490/0.282/0.358 TP/FP/FN: 118/123/301 std-P/R/F1: 0.385/0.416/0.410	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.766/0.343/0.349 mic-P/R/F1: 0.471/0.272/0.345 TP/FP/FN: 114/128/305 std-P/R/F1: 0.387/0.412/0.405	SVMAnnotatorFull
+
+
+SVMAnnotatorFull + anchorsAvgED scoring (Devel Set) + 5 individual words
+
+C2W	mac-P/R/F1: 0.667/0.306/0.315 mic-P/R/F1: 0.390/0.229/0.289 TP/FP/FN: 96/150/323 std-P/R/F1: 0.446/0.406/0.401	SVMAnnotatorFull
+A2W-SAM	mac-P/R/F1: 0.666/0.305/0.314 mic-P/R/F1: 0.385/0.227/0.285 TP/FP/FN: 95/152/324 std-P/R/F1: 0.447/0.405/0.400	SVMAnnotatorFull

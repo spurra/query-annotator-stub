@@ -33,6 +33,7 @@ public class SVMAnnotatorFull implements Sa2WSystem {
     private static WordVectors vec;
     private static HashMap<String, List<Integer>> mentionIdMap;
     private static HashMap<String, List<Integer>> testingQueryIdMap;
+    private static float thresholdG = 0.2f;
 
     private WikipediaApiInterface wikiApi;
 
@@ -180,6 +181,7 @@ public class SVMAnnotatorFull implements Sa2WSystem {
                 double score=0;
                 try {
                     score = SMAPHFeatures.word2vec_sim(vec, entity, mention.name);
+                    //score = -SMAPHFeatures.anchorsAvgED(wikiApi, entity, mention.name);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -197,7 +199,7 @@ public class SVMAnnotatorFull implements Sa2WSystem {
         for (EntityMentionPair cand_pair : em_candidates) {
             if (SVMAnnotatorFull.isForbiddenInterval(used_intervals, cand_pair.getStartIdx(), cand_pair.getEndIdx()))
                 continue;
-            if (cand_pair.getRho() < 0.5f)
+            if (cand_pair.getRho() < thresholdG)
                 break;
 
             String extract = FakeAnnotator.concatenateStrings(words, cand_pair.getStartIdx(), cand_pair.getEndIdx());
